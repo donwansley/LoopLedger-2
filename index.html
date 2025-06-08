@@ -3,78 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LoopLedger - Connect Your Music Accounts</title>
+    <title>LoopLedger - Track Every Loop. Collect Every Ledger.</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        .music-gradient {
-            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
-            background-size: 300% 300%;
-            animation: gradient 8s ease infinite;
-        }
-        @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        .connection-card {
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
-        }
-        .connection-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-        }
-        .connected {
-            border-color: #10b981;
-            background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
-        }
-        .disconnected {
-            border-color: #e5e7eb;
-        }
-        .oauth-flow {
-            display: none;
-        }
-        .oauth-flow.active {
-            display: block;
-        }
-        .platform-spotify { color: #1db954; }
-        .platform-youtube { color: #ff0000; }
-        .platform-apple { color: #fa243c; }
-        .platform-soundexchange { color: #0066cc; }
-        .platform-ascap { color: #003d7a; }
-        .platform-bmi { color: #e31837; }
-        .platform-mlc { color: #8b5a2b; }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://js.stripe.com/v3/"></script>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-900 text-white font-sans">
+    <!-- Loading Spinner -->
+    <div id="loading" class="fixed inset-0 bg-gray-900 bg-opacity-90 flex items-center justify-center z-50">
+        <div class="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500"></div>
+    </div>
+
     <!-- Navigation -->
-    <nav class="bg-white shadow-lg sticky top-0 z-50">
+    <nav class="bg-gray-800 border-b border-gray-700 sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0 flex items-center">
-                        <i class="fas fa-infinity text-3xl music-gradient bg-clip-text text-transparent mr-3"></i>
-                        <span class="text-xl font-bold text-gray-900">LoopLedger</span>
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-music text-purple-500 text-2xl mr-2"></i>
+                        <span class="text-xl font-bold text-white">LoopLedger</span>
                     </div>
-                    <div class="hidden md:ml-10 md:flex md:space-x-8">
-                        <a href="#dashboard" class="nav-link text-indigo-600 font-medium">Dashboard</a>
-                        <a href="#integrations" class="nav-link text-gray-500 hover:text-gray-900">Integrations</a>
-                        <a href="#songs" class="nav-link text-gray-500 hover:text-gray-900">Songs</a>
-                        <a href="#reports" class="nav-link text-gray-500 hover:text-gray-900">Reports</a>
-                        <a href="#support" class="nav-link text-gray-500 hover:text-gray-900">Support</a>
+                    <div class="hidden md:block ml-10">
+                        <div class="flex items-baseline space-x-4">
+                            <a href="#" onclick="showSection('dashboard')" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700">Dashboard</a>
+                            <a href="#" onclick="showSection('upload')" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700">Upload Songs</a>
+                            <a href="#" onclick="showSection('integrations')" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700">Integrations</a>
+                            <a href="#" onclick="showSection('reports')" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700">Reports</a>
+                            <a href="#" onclick="showSection('billing')" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700">Billing</a>
+                        </div>
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
-                        <i class="fas fa-plus mr-2"></i>Add Song
-                    </button>
-                    <div class="h-8 w-8 bg-indigo-600 rounded-full flex items-center justify-center text-white font-medium">
-                        U
+                    <div id="user-menu" class="hidden">
+                        <span id="user-email" class="text-gray-300"></span>
+                        <button onclick="signOut()" class="ml-4 bg-red-600 hover:bg-red-700 px-3 py-2 rounded-md text-sm">Sign Out</button>
+                    </div>
+                    <div id="auth-buttons">
+                        <button onclick="showSection('login')" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-md text-sm font-medium">Sign In</button>
                     </div>
                 </div>
             </div>
@@ -82,827 +49,1314 @@
     </nav>
 
     <!-- Main Content -->
-    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <!-- Header -->
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Connect Your Music Accounts</h1>
-            <p class="mt-2 text-gray-600">Link your accounts to start tracking royalties from all your music platforms.</p>
-        </div>
-
-        <!-- Connection Status Overview -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-link text-2xl text-green-500"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500">Connected Platforms</p>
-                        <p class="text-2xl font-semibold text-gray-900" id="connected-count">3</p>
-                    </div>
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Landing Section -->
+        <div id="landing-section" class="section">
+            <div class="text-center py-20">
+                <h1 class="text-5xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
+                    Track Every Loop. Collect Every Ledger.
+                </h1>
+                <p class="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
+                    Empower artists, managers, and labels to track royalties, manage song data, resolve unpaid earnings, and receive smart, AI-assisted guidance through every step of the music rights process.
+                </p>
+                <div class="flex justify-center space-x-4">
+                    <button onclick="showSection('signup')" class="bg-purple-600 hover:bg-purple-700 px-8 py-3 rounded-lg text-lg font-semibold">Start Free Trial</button>
+                    <button onclick="showSection('demo')" class="border border-gray-600 hover:border-gray-500 px-8 py-3 rounded-lg text-lg font-semibold">View Demo</button>
                 </div>
             </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-dollar-sign text-2xl text-blue-500"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500">Total Tracked Earnings</p>
-                        <p class="text-2xl font-semibold text-gray-900">$2,847.32</p>
-                    </div>
+
+            <!-- Features Grid -->
+            <div class="grid md:grid-cols-3 gap-8 mb-20">
+                <div class="bg-gray-800 p-6 rounded-lg">
+                    <i class="fas fa-chart-line text-purple-500 text-3xl mb-4"></i>
+                    <h3 class="text-xl font-semibold mb-2">Real-time Royalty Tracking</h3>
+                    <p class="text-gray-300">Connect to ASCAP, BMI, MLC, SoundExchange, and streaming platforms for comprehensive royalty monitoring.</p>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-lg">
+                    <i class="fas fa-robot text-purple-500 text-3xl mb-4"></i>
+                    <h3 class="text-xl font-semibold mb-2">AI-Powered Assistant</h3>
+                    <p class="text-gray-300">LoopBot provides intelligent guidance, onboarding help, and automated dispute resolution.</p>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-lg">
+                    <i class="fas fa-file-invoice-dollar text-purple-500 text-3xl mb-4"></i>
+                    <h3 class="text-xl font-semibold mb-2">Automated Reports</h3>
+                    <p class="text-gray-300">Generate detailed PDF/CSV reports with customizable schedules and email delivery.</p>
                 </div>
             </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-music text-2xl text-purple-500"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500">Tracked Songs</p>
-                        <p class="text-2xl font-semibold text-gray-900">47</p>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Platform Integrations -->
-        <div class="bg-white rounded-lg shadow-lg">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h2 class="text-xl font-semibold text-gray-900">Platform Integrations</h2>
-                <p class="mt-1 text-sm text-gray-600">Connect your accounts to automatically sync royalty data</p>
-            </div>
-            <div class="p-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    
-                    <!-- Spotify Integration -->
-                    <div class="connection-card bg-white rounded-lg p-6 connected" data-platform="spotify">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center">
-                                <i class="fab fa-spotify text-3xl platform-spotify"></i>
-                                <div class="ml-3">
-                                    <h3 class="text-lg font-medium text-gray-900">Spotify</h3>
-                                    <p class="text-sm text-gray-500">Streaming Data</p>
-                                </div>
-                            </div>
-                            <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Connected</span>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-4">Track streams, listeners, and metadata from Spotify.</p>
-                        <button class="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition" onclick="disconnectPlatform('spotify')">
-                            <i class="fas fa-unlink mr-2"></i>Disconnect
-                        </button>
-                        <p class="text-xs text-gray-500 mt-2">Last sync: 2 hours ago</p>
-                    </div>
-
-                    <!-- YouTube Integration -->
-                    <div class="connection-card bg-white rounded-lg p-6 connected" data-platform="youtube">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center">
-                                <i class="fab fa-youtube text-3xl platform-youtube"></i>
-                                <div class="ml-3">
-                                    <h3 class="text-lg font-medium text-gray-900">YouTube</h3>
-                                    <p class="text-sm text-gray-500">Content ID & Analytics</p>
-                                </div>
-                            </div>
-                            <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Connected</span>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-4">Revenue from YouTube Content ID and video analytics.</p>
-                        <button class="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition" onclick="disconnectPlatform('youtube')">
-                            <i class="fas fa-unlink mr-2"></i>Disconnect
-                        </button>
-                        <p class="text-xs text-gray-500 mt-2">Last sync: 1 hour ago</p>
-                    </div>
-
-                    <!-- Apple Music Integration -->
-                    <div class="connection-card bg-white rounded-lg p-6 disconnected" data-platform="apple">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center">
-                                <i class="fab fa-apple text-3xl platform-apple"></i>
-                                <div class="ml-3">
-                                    <h3 class="text-lg font-medium text-gray-900">Apple Music</h3>
-                                    <p class="text-sm text-gray-500">Streaming Analytics</p>
-                                </div>
-                            </div>
-                            <span class="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Not Connected</span>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-4">Connect Apple Music for Artists for streaming data.</p>
-                        <button class="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition" onclick="connectPlatform('apple')">
-                            <i class="fas fa-link mr-2"></i>Connect
-                        </button>
-                    </div>
-
-                    <!-- MLC Integration -->
-                    <div class="connection-card bg-white rounded-lg p-6 connected" data-platform="mlc">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center">
-                                <i class="fas fa-file-contract text-3xl platform-mlc"></i>
-                                <div class="ml-3">
-                                    <h3 class="text-lg font-medium text-gray-900">The MLC</h3>
-                                    <p class="text-sm text-gray-500">Mechanical Royalties</p>
-                                </div>
-                            </div>
-                            <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Connected</span>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-4">Mechanical Licensing Collective for digital mechanical royalties.</p>
-                        <button class="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition" onclick="disconnectPlatform('mlc')">
-                            <i class="fas fa-unlink mr-2"></i>Disconnect
-                        </button>
-                        <p class="text-xs text-gray-500 mt-2">Last sync: 4 hours ago</p>
-                    </div>
-
-                    <!-- ASCAP Integration -->
-                    <div class="connection-card bg-white rounded-lg p-6 disconnected" data-platform="ascap">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center">
-                                <i class="fas fa-music text-3xl platform-ascap"></i>
-                                <div class="ml-3">
-                                    <h3 class="text-lg font-medium text-gray-900">ASCAP</h3>
-                                    <p class="text-sm text-gray-500">Performance Royalties</p>
-                                </div>
-                            </div>
-                            <span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Manual Import</span>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-4">Import ASCAP statements manually or via CSV upload.</p>
-                        <button class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition" onclick="connectPlatform('ascap')">
-                            <i class="fas fa-upload mr-2"></i>Import Data
-                        </button>
-                    </div>
-
-                    <!-- BMI Integration -->
-                    <div class="connection-card bg-white rounded-lg p-6 disconnected" data-platform="bmi">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center">
-                                <i class="fas fa-broadcast-tower text-3xl platform-bmi"></i>
-                                <div class="ml-3">
-                                    <h3 class="text-lg font-medium text-gray-900">BMI</h3>
-                                    <p class="text-sm text-gray-500">Performance Royalties</p>
-                                </div>
-                            </div>
-                            <span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Manual Import</span>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-4">Import BMI statements manually or via CSV upload.</p>
-                        <button class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition" onclick="connectPlatform('bmi')">
-                            <i class="fas fa-upload mr-2"></i>Import Data
-                        </button>
-                    </div>
-
-                    <!-- SoundExchange Integration -->
-                    <div class="connection-card bg-white rounded-lg p-6 disconnected" data-platform="soundexchange">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center">
-                                <i class="fas fa-radio text-3xl platform-soundexchange"></i>
-                                <div class="ml-3">
-                                    <h3 class="text-lg font-medium text-gray-900">SoundExchange</h3>
-                                    <p class="text-sm text-gray-500">Digital Performance</p>
-                                </div>
-                            </div>
-                            <span class="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Not Connected</span>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-4">Digital performance royalties from satellite and internet radio.</p>
-                        <button class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition" onclick="connectPlatform('soundexchange')">
-                            <i class="fas fa-link mr-2"></i>Connect
-                        </button>
-                    </div>
-
-                    <!-- DistroKid Integration -->
-                    <div class="connection-card bg-white rounded-lg p-6 disconnected" data-platform="distrokid">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center">
-                                <i class="fas fa-compact-disc text-3xl text-orange-500"></i>
-                                <div class="ml-3">
-                                    <h3 class="text-lg font-medium text-gray-900">DistroKid</h3>
-                                    <p class="text-sm text-gray-500">Distribution Analytics</p>
-                                </div>
-                            </div>
-                            <span class="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Not Connected</span>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-4">Connect your DistroKid account for distribution analytics.</p>
-                        <button class="w-full bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition" onclick="connectPlatform('distrokid')">
-                            <i class="fas fa-link mr-2"></i>Connect
-                        </button>
-                    </div>
-
-                    <!-- CD Baby Integration -->
-                    <div class="connection-card bg-white rounded-lg p-6 disconnected" data-platform="cdbaby">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center">
-                                <i class="fas fa-baby text-3xl text-blue-400"></i>
-                                <div class="ml-3">
-                                    <h3 class="text-lg font-medium text-gray-900">CD Baby</h3>
-                                    <p class="text-sm text-gray-500">Distribution & Publishing</p>
-                                </div>
-                            </div>
-                            <span class="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Not Connected</span>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-4">Connect CD Baby for distribution and publishing data.</p>
-                        <button class="w-full bg-blue-400 text-white py-2 px-4 rounded-lg hover:bg-blue-500 transition" onclick="connectPlatform('cdbaby')">
-                            <i class="fas fa-link mr-2"></i>Connect
-                        </button>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-
-        <!-- OAuth Flow Modals -->
-        <div id="oauth-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-            <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-                <div class="mt-3">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-medium text-gray-900" id="modal-title">Connect Platform</h3>
-                        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
-                            <i class="fas fa-times text-xl"></i>
-                        </button>
-                    </div>
-                    <div id="modal-content">
-                        <!-- Content will be dynamically inserted here -->
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Integration Instructions -->
-        <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <div class="flex">
-                <div class="flex-shrink-0">
-                    <i class="fas fa-info-circle text-blue-400 text-xl"></i>
-                </div>
-                <div class="ml-3">
-                    <h3 class="text-sm font-medium text-blue-800">Integration Help</h3>
-                    <div class="mt-2 text-sm text-blue-700">
-                        <ul class="list-disc pl-5 space-y-1">
-                            <li><strong>Spotify & YouTube:</strong> Full API access available for real-time data</li>
-                            <li><strong>MLC:</strong> Beta API access for mechanical royalty tracking</li>
-                            <li><strong>ASCAP & BMI:</strong> Manual import until APIs become available</li>
-                            <li><strong>SoundExchange:</strong> Working on API integration - manual import for now</li>
-                            <li><strong>Need help?</strong> Contact our integration team for assistance</li>
+            <!-- Pricing Plans -->
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold mb-8">Choose Your Plan</h2>
+                <div class="grid md:grid-cols-4 gap-6">
+                    <div class="bg-gray-800 p-6 rounded-lg border border-gray-700">
+                        <h3 class="text-xl font-semibold mb-2">Free Trial</h3>
+                        <p class="text-3xl font-bold mb-4">$0<span class="text-sm text-gray-400">/month</span></p>
+                        <ul class="text-sm text-gray-300 mb-6 space-y-2">
+                            <li>• 3 tracks</li>
+                            <li>• 1 integration</li>
+                            <li>• 1 report/month</li>
                         </ul>
+                        <button onclick="startFreeTrial()" class="w-full bg-purple-600 hover:bg-purple-700 py-2 rounded">Start Free</button>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-lg border border-purple-500">
+                        <h3 class="text-xl font-semibold mb-2">Pro</h3>
+                        <p class="text-3xl font-bold mb-4">$29<span class="text-sm text-gray-400">/month</span></p>
+                        <ul class="text-sm text-gray-300 mb-6 space-y-2">
+                            <li>• 50 tracks</li>
+                            <li>• 3 integrations</li>
+                            <li>• Unlimited reports</li>
+                        </ul>
+                        <button onclick="subscribeToPlan('pro')" class="w-full bg-purple-600 hover:bg-purple-700 py-2 rounded">Subscribe</button>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-lg border border-gray-700">
+                        <h3 class="text-xl font-semibold mb-2">Business</h3>
+                        <p class="text-3xl font-bold mb-4">$79<span class="text-sm text-gray-400">/month</span></p>
+                        <ul class="text-sm text-gray-300 mb-6 space-y-2">
+                            <li>• 200 tracks</li>
+                            <li>• 5 integrations</li>
+                            <li>• Concierge support</li>
+                        </ul>
+                        <button onclick="subscribeToPlan('business')" class="w-full bg-purple-600 hover:bg-purple-700 py-2 rounded">Subscribe</button>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-lg border border-gray-700">
+                        <h3 class="text-xl font-semibold mb-2">Enterprise</h3>
+                        <p class="text-3xl font-bold mb-4">$199+<span class="text-sm text-gray-400">/month</span></p>
+                        <ul class="text-sm text-gray-300 mb-6 space-y-2">
+                            <li>• 500+ tracks</li>
+                            <li>• API access</li>
+                            <li>• White-label</li>
+                        </ul>
+                        <button onclick="subscribeToPlan('enterprise')" class="w-full bg-purple-600 hover:bg-purple-700 py-2 rounded">Contact Sales</button>
                     </div>
                 </div>
             </div>
         </div>
 
-    </div>
+        <!-- Login Section -->
+        <div id="login-section" class="section hidden">
+            <div class="max-w-md mx-auto bg-gray-800 rounded-lg p-8">
+                <h2 class="text-2xl font-bold mb-6 text-center">Sign In to LoopLedger</h2>
+                <form id="login-form" onsubmit="signIn(event)">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">Email</label>
+                        <input type="email" id="login-email" required class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium mb-2">Password</label>
+                        <input type="password" id="login-password" required class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 py-2 rounded-md font-semibold">Sign In</button>
+                </form>
+                <p class="text-center mt-4 text-gray-400">
+                    Don't have an account? 
+                    <a href="#" onclick="showSection('signup')" class="text-purple-400 hover:text-purple-300">Sign up</a>
+                </p>
+            </div>
+        </div>
 
-    <!-- LoopBot Chat Assistant -->
-    <div id="loopbot-container" class="fixed bottom-6 right-6 z-50">
-        <div id="loopbot-chat" class="hidden bg-white rounded-lg shadow-xl w-80 h-96 flex flex-col">
-            <div class="bg-indigo-600 text-white p-4 rounded-t-lg flex items-center justify-between">
-                <div class="flex items-center">
-                    <i class="fas fa-robot mr-2"></i>
-                    <span class="font-medium">LoopBot Assistant</span>
-                </div>
-                <button onclick="toggleChat()" class="text-white hover:text-gray-200">
-                    <i class="fas fa-minus"></i>
-                </button>
+        <!-- Signup Section -->
+        <div id="signup-section" class="section hidden">
+            <div class="max-w-md mx-auto bg-gray-800 rounded-lg p-8">
+                <h2 class="text-2xl font-bold mb-6 text-center">Create Your Account</h2>
+                <form id="signup-form" onsubmit="signUp(event)">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">Full Name</label>
+                        <input type="text" id="signup-name" required class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">Email</label>
+                        <input type="email" id="signup-email" required class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium mb-2">Password</label>
+                        <input type="password" id="signup-password" required class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 py-2 rounded-md font-semibold">Create Account</button>
+                </form>
+                <p class="text-center mt-4 text-gray-400">
+                    Already have an account? 
+                    <a href="#" onclick="showSection('login')" class="text-purple-400 hover:text-purple-300">Sign in</a>
+                </p>
             </div>
-            <div class="flex-1 p-4 overflow-y-auto" id="chat-messages">
-                <div class="text-sm text-gray-600 mb-3">
-                    <strong>LoopBot:</strong> Hi! I can help you connect your music accounts. Which platform would you like to integrate first?
+        </div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboard-section" class="section hidden">
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold mb-2">Dashboard</h1>
+                <p class="text-gray-400">Welcome back! Here's your royalty overview.</p>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-gray-800 p-6 rounded-lg">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-purple-600 rounded-lg">
+                            <i class="fas fa-dollar-sign text-white"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-400">Total Earnings</p>
+                            <p id="total-earnings" class="text-2xl font-bold">$0.00</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-lg">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-green-600 rounded-lg">
+                            <i class="fas fa-music text-white"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-400">Songs Tracked</p>
+                            <p id="songs-count" class="text-2xl font-bold">0</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-lg">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-blue-600 rounded-lg">
+                            <i class="fas fa-link text-white"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-400">Connected Platforms</p>
+                            <p id="platforms-count" class="text-2xl font-bold">0</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-lg">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-yellow-600 rounded-lg">
+                            <i class="fas fa-exclamation-triangle text-white"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-400">Pending Issues</p>
+                            <p id="issues-count" class="text-2xl font-bold">0</p>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="p-4 border-t">
-                <div class="flex">
-                    <input type="text" id="chat-input" placeholder="Ask about integrations..." class="flex-1 border border-gray-300 rounded-l-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <button onclick="sendMessage()" class="bg-indigo-600 text-white px-4 py-2 rounded-r-lg hover:bg-indigo-700">
-                        <i class="fas fa-paper-plane"></i>
+
+            <!-- Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div class="bg-gray-800 p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold mb-4">Earnings Over Time</h3>
+                    <canvas id="earnings-chart" width="400" height="200"></canvas>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold mb-4">Revenue Sources</h3>
+                    <canvas id="sources-chart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="bg-gray-800 p-6 rounded-lg">
+                <h3 class="text-lg font-semibold mb-4">Recent Activity</h3>
+                <div id="recent-activity" class="space-y-4">
+                    <p class="text-gray-400">No recent activity</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Section -->
+        <div id="upload-section" class="section hidden">
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold mb-2">Upload Songs</h1>
+                <p class="text-gray-400">Add your tracks to start tracking royalties.</p>
+            </div>
+
+            <div class="bg-gray-800 p-6 rounded-lg">
+                <form id="song-upload-form" onsubmit="uploadSong(event)">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Song Title</label>
+                            <input type="text" id="song-title" required class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Artist Name</label>
+                            <input type="text" id="artist-name" required class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">ISRC Code</label>
+                            <input type="text" id="isrc-code" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Release Date</label>
+                            <input type="date" id="release-date" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Genre</label>
+                            <select id="genre" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <option value="">Select Genre</option>
+                                <option value="pop">Pop</option>
+                                <option value="rock">Rock</option>
+                                <option value="hip-hop">Hip-Hop</option>
+                                <option value="electronic">Electronic</option>
+                                <option value="country">Country</option>
+                                <option value="jazz">Jazz</option>
+                                <option value="classical">Classical</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Duration (seconds)</label>
+                            <input type="number" id="duration" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        </div>
+                    </div>
+
+                    <div class="mt-6">
+                        <label class="block text-sm font-medium mb-2">Collaborators & Splits</label>
+                        <div id="collaborators" class="space-y-3">
+                            <div class="flex items-center space-x-3">
+                                <input type="text" placeholder="Collaborator Name" class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <input type="number" placeholder="Split %" min="0" max="100" class="w-20 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <button type="button" onclick="addCollaborator()" class="bg-green-600 hover:bg-green-700 px-3 py-2 rounded-md">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6">
+                        <button type="submit" class="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-md font-semibold">
+                            <i class="fas fa-upload mr-2"></i>Upload Song
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Songs List -->
+            <div class="mt-8 bg-gray-800 p-6 rounded-lg">
+                <h3 class="text-lg font-semibold mb-4">Your Songs</h3>
+                <div id="songs-list">
+                    <p class="text-gray-400">No songs uploaded yet</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Integrations Section -->
+        <div id="integrations-section" class="section hidden">
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold mb-2">Platform Integrations</h1>
+                <p class="text-gray-400">Connect your accounts to track royalties from all sources.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Spotify Integration -->
+                <div class="bg-gray-800 p-6 rounded-lg border border-gray-700">
+                    <div class="flex items-center mb-4">
+                        <i class="fab fa-spotify text-green-500 text-3xl mr-3"></i>
+                        <div>
+                            <h3 class="text-lg font-semibold">Spotify</h3>
+                            <p class="text-sm text-gray-400">Streaming royalties</p>
+                        </div>
+                    </div>
+                    <div id="spotify-status" class="mb-4">
+                        <span class="inline-block px-2 py-1 bg-red-600 text-xs rounded">Disconnected</span>
+                    </div>
+                    <button onclick="connectSpotify()" class="w-full bg-green-600 hover:bg-green-700 py-2 rounded-md">
+                        Connect Spotify
+                    </button>
+                </div>
+
+                <!-- YouTube Integration -->
+                <div class="bg-gray-800 p-6 rounded-lg border border-gray-700">
+                    <div class="flex items-center mb-4">
+                        <i class="fab fa-youtube text-red-500 text-3xl mr-3"></i>
+                        <div>
+                            <h3 class="text-lg font-semibold">YouTube</h3>
+                            <p class="text-sm text-gray-400">Video monetization</p>
+                        </div>
+                    </div>
+                    <div id="youtube-status" class="mb-4">
+                        <span class="inline-block px-2 py-1 bg-red-600 text-xs rounded">Disconnected</span>
+                    </div>
+                    <button onclick="connectYouTube()" class="w-full bg-red-600 hover:bg-red-700 py-2 rounded-md">
+                        Connect YouTube
+                    </button>
+                </div>
+
+                <!-- Apple Music Integration -->
+                <div class="bg-gray-800 p-6 rounded-lg border border-gray-700">
+                    <div class="flex items-center mb-4">
+                        <i class="fab fa-apple text-gray-300 text-3xl mr-3"></i>
+                        <div>
+                            <h3 class="text-lg font-semibold">Apple Music</h3>
+                            <p class="text-sm text-gray-400">Streaming royalties</p>
+                        </div>
+                    </div>
+                    <div id="apple-status" class="mb-4">
+                        <span class="inline-block px-2 py-1 bg-red-600 text-xs rounded">Disconnected</span>
+                    </div>
+                    <button onclick="connectApple()" class="w-full bg-gray-600 hover:bg-gray-700 py-2 rounded-md">
+                        Connect Apple Music
+                    </button>
+                </div>
+
+                <!-- ASCAP Integration -->
+                <div class="bg-gray-800 p-6 rounded-lg border border-gray-700">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-file-contract text-blue-500 text-3xl mr-3"></i>
+                        <div>
+                            <h3 class="text-lg font-semibold">ASCAP</h3>
+                            <p class="text-sm text-gray-400">Performance royalties</p>
+                        </div>
+                    </div>
+                    <div id="ascap-status" class="mb-4">
+                        <span class="inline-block px-2 py-1 bg-red-600 text-xs rounded">Disconnected</span>
+                    </div>
+                    <button onclick="connectASCAP()" class="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-md">
+                        Connect ASCAP
+                    </button>
+                </div>
+
+                <!-- BMI Integration -->
+                <div class="bg-gray-800 p-6 rounded-lg border border-gray-700">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-music text-purple-500 text-3xl mr-3"></i>
+                        <div>
+                            <h3 class="text-lg font-semibold">BMI</h3>
+                            <p class="text-sm text-gray-400">Performance royalties</p>
+                        </div>
+                    </div>
+                    <div id="bmi-status" class="mb-4">
+                        <span class="inline-block px-2 py-1 bg-red-600 text-xs rounded">Disconnected</span>
+                    </div>
+                    <button onclick="connectBMI()" class="w-full bg-purple-600 hover:bg-purple-700 py-2 rounded-md">
+                        Connect BMI
+                    </button>
+                </div>
+
+                <!-- MLC Integration -->
+                <div class="bg-gray-800 p-6 rounded-lg border border-gray-700">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-cog text-yellow-500 text-3xl mr-3"></i>
+                        <div>
+                            <h3 class="text-lg font-semibold">The MLC</h3>
+                            <p class="text-sm text-gray-400">Mechanical royalties</p>
+                        </div>
+                    </div>
+                    <div id="mlc-status" class="mb-4">
+                        <span class="inline-block px-2 py-1 bg-red-600 text-xs rounded">Disconnected</span>
+                    </div>
+                    <button onclick="connectMLC()" class="w-full bg-yellow-600 hover:bg-yellow-700 py-2 rounded-md">
+                        Connect MLC
+                    </button>
+                </div>
+            </div>
+
+            <!-- Integration Instructions -->
+            <div class="mt-8 bg-gray-800 p-6 rounded-lg">
+                <h3 class="text-lg font-semibold mb-4">Integration Setup</h3>
+                <div class="space-y-4">
+                    <div class="p-4 bg-blue-900 bg-opacity-30 border border-blue-700 rounded-lg">
+                        <h4 class="font-semibold text-blue-300 mb-2">Real API Connections</h4>
+                        <p class="text-sm text-gray-300">
+                            Click any platform above to connect your real accounts. We use OAuth2 secure authentication to access your royalty data safely.
+                        </p>
+                    </div>
+                    <div class="p-4 bg-green-900 bg-opacity-30 border border-green-700 rounded-lg">
+                        <h4 class="font-semibold text-green-300 mb-2">Data Sync</h4>
+                        <p class="text-sm text-gray-300">
+                            Once connected, we automatically sync your royalty data every 24 hours. You can also manually refresh at any time.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Section -->
+        <div id="reports-section" class="section hidden">
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold mb-2">Reports</h1>
+                <p class="text-gray-400">Generate detailed royalty reports for your music.</p>
+            </div>
+
+            <!-- Report Generator -->
+            <div class="bg-gray-800 p-6 rounded-lg mb-8">
+                <h3 class="text-lg font-semibold mb-4">Generate New Report</h3>
+                <form id="report-form" onsubmit="generateReport(event)">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Report Type</label>
+                            <select id="report-type" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <option value="earnings">Earnings Summary</option>
+                                <option value="detailed">Detailed Breakdown</option>
+                                <option value="platform">Platform Comparison</option>
+                                <option value="trends">Trend Analysis</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Date Range</label>
+                            <select id="date-range" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <option value="last-month">Last Month</option>
+                                <option value="last-quarter">Last Quarter</option>
+                                <option value="last-year">Last Year</option>
+                                <option value="custom">Custom Range</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Format</label>
+                            <select id="report-format" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <option value="pdf">PDF</option>
+                                <option value="csv">CSV</option>
+                                <option value="xlsx">Excel</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <button type="submit" class="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-md">
+                            <i class="fas fa-file-export mr-2"></i>Generate Report
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Scheduled Reports -->
+            <div class="bg-gray-800 p-6 rounded-lg mb-8">
+                <h3 class="text-lg font-semibold mb-4">Scheduled Reports</h3>
+                <div class="flex justify-between items-center mb-4">
+                    <p class="text-gray-400">Automatically generated reports</p>
+                    <button onclick="showScheduleModal()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-md text-sm">
+                        <i class="fas fa-plus mr-2"></i>Schedule Report
+                    </button>
+                </div>
+                <div id="scheduled-reports" class="space-y-3">
+                    <p class="text-gray-400">No scheduled reports</p>
+                </div>
+            </div>
+
+            <!-- Recent Reports -->
+            <div class="bg-gray-800 p-6 rounded-lg">
+                <h3 class="text-lg font-semibold mb-4">Recent Reports</h3>
+                <div id="recent-reports" class="space-y-3">
+                    <p class="text-gray-400">No reports generated yet</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Billing Section -->
+        <div id="billing-section" class="section hidden">
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold mb-2">Billing & Subscription</h1>
+                <p class="text-gray-400">Manage your subscription and payment methods.</p>
+            </div>
+
+            <!-- Current Plan -->
+            <div class="bg-gray-800 p-6 rounded-lg mb-8">
+                <h3 class="text-lg font-semibold mb-4">Current Plan</h3>
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-xl font-semibold" id="current-plan">Free Trial</p>
+                        <p class="text-gray-400" id="plan-details">3 tracks, 1 integration, 1 report/month</p>
+                        <p class="text-sm text-gray-500" id="billing-cycle">Expires in 14 days</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-2xl font-bold" id="plan-price">$0.00</p>
+                        <p class="text-sm text-gray-400">per month</p>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <button onclick="showUpgradeModal()" class="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-md">
+                        Upgrade Plan
+                    </button>
+                </div>
+            </div>
+
+            <!-- Usage Stats -->
+            <div class="bg-gray-800 p-6 rounded-lg mb-8">
+                <h3 class="text-lg font-semibold mb-4">Usage This Month</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <p class="text-sm text-gray-400">Tracks Uploaded</p>
+                        <div class="flex items-center mt-2">
+                            <div class="w-full bg-gray-700 rounded-full h-2">
+                                <div class="bg-purple-600 h-2 rounded-full" style="width: 0%"></div>
+                            </div>
+                            <span class="ml-2 text-sm">0/3</span>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-400">Integrations</p>
+                        <div class="flex items-center mt-2">
+                            <div class="w-full bg-gray-700 rounded-full h-2">
+                                <div class="bg-purple-600 h-2 rounded-full" style="width: 0%"></div>
+                            </div>
+                            <span class="ml-2 text-sm">0/1</span>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-400">Reports Generated</p>
+                        <div class="flex items-center mt-2">
+                            <div class="w-full bg-gray-700 rounded-full h-2">
+                                <div class="bg-purple-600 h-2 rounded-full" style="width: 0%"></div>
+                            </div>
+                            <span class="ml-2 text-sm">0/1</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Method -->
+            <div class="bg-gray-800 p-6 rounded-lg">
+                <h3 class="text-lg font-semibold mb-4">Payment Method</h3>
+                <div id="payment-method">
+                    <p class="text-gray-400">No payment method on file</p>
+                    <button onclick="addPaymentMethod()" class="mt-4 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md">
+                        Add Payment Method
                     </button>
                 </div>
             </div>
         </div>
-        <button id="loopbot-toggle" onclick="toggleChat()" class="bg-indigo-600 text-white w-14 h-14 rounded-full shadow-lg hover:bg-indigo-700 transition flex items-center justify-center">
-            <i class="fas fa-robot text-xl"></i>
+    </main>
+
+    <!-- LoopBot Chatbot -->
+    <div id="chatbot" class="fixed bottom-4 right-4 z-50">
+        <button onclick="toggleChat()" class="bg-purple-600 hover:bg-purple-700 rounded-full p-4 shadow-lg">
+            <i class="fas fa-robot text-white text-xl"></i>
         </button>
     </div>
 
+    <div id="chat-window" class="fixed bottom-20 right-4 w-80 h-96 bg-gray-800 rounded-lg shadow-xl border border-gray-700 hidden z-50">
+        <div class="flex items-center justify-between p-4 border-b border-gray-700">
+            <div class="flex items-center">
+                <i class="fas fa-robot text-purple-500 mr-2"></i>
+                <span class="font-semibold">LoopBot</span>
+            </div>
+            <button onclick="toggleChat()" class="text-gray-400 hover:text-white">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="chat-messages" class="p-4 h-64 overflow-y-auto">
+            <div class="mb-4">
+                <div class="bg-purple-600 text-white p-3 rounded-lg max-w-xs">
+                    <p class="text-sm">Hi! I'm LoopBot, your AI assistant. How can I help you today?</p>
+                </div>
+            </div>
+        </div>
+        <div class="p-4 border-t border-gray-700">
+            <div class="flex">
+                <input type="text" id="chat-input" placeholder="Ask me anything..." class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-l-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <button onclick="sendMessage()" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-r-md">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50" onclick="closeModal()">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div id="modal-content" class="bg-gray-800 rounded-lg p-6 max-w-md w-full" onclick="event.stopPropagation()">
+                <!-- Modal content will be inserted here -->
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Platform connection states
-        let connectedPlatforms = ['spotify', 'youtube', 'mlc'];
+        // Supabase Configuration
+        const supabaseUrl = 'https://your-project.supabase.co'; // Replace with your Supabase URL
+        const supabaseKey = 'your-anon-key'; // Replace with your Supabase anon key
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        // OAuth flow configurations
-        const platformConfigs = {
-            spotify: {
-                name: 'Spotify',
-                clientId: 'your_spotify_client_id',
-                redirectUri: window.location.origin + '/auth/spotify',
-                scopes: ['user-read-private', 'user-read-email'],
-                authUrl: 'https://accounts.spotify.com/authorize'
-            },
-            youtube: {
-                name: 'YouTube',
-                clientId: 'your_youtube_client_id',
-                redirectUri: window.location.origin + '/auth/youtube',
-                scopes: ['https://www.googleapis.com/auth/youtube.readonly', 'https://www.googleapis.com/auth/yt-analytics.readonly'],
-                authUrl: 'https://accounts.google.com/o/oauth2/v2/auth'
-            },
-            apple: {
-                name: 'Apple Music',
-                type: 'manual',
-                instructions: 'Apple Music integration requires MusicKit setup. Contact support for assistance.'
-            },
-            mlc: {
-                name: 'The MLC',
-                type: 'api',
-                instructions: 'MLC integration uses their Public Search API. Credentials configured automatically.'
-            },
-            ascap: {
-                name: 'ASCAP',
-                type: 'manual',
-                instructions: 'ASCAP requires manual statement import. Download CSV from your ASCAP account.'
-            },
-            bmi: {
-                name: 'BMI',
-                type: 'manual',
-                instructions: 'BMI requires manual statement import. Download CSV from your BMI account.'
-            },
-            soundexchange: {
-                name: 'SoundExchange',
-                type: 'manual',
-                instructions: 'SoundExchange integration coming soon. Manual import available.'
-            },
-            distrokid: {
-                name: 'DistroKid',
-                type: 'oauth',
-                instructions: 'Connect your DistroKid account for distribution analytics.'
-            },
-            cdbaby: {
-                name: 'CD Baby',
-                type: 'oauth',
-                instructions: 'Connect your CD Baby account for distribution and publishing data.'
-            }
-        };
+        // Stripe Configuration
+        const stripe = Stripe('pk_test_your_publishable_key'); // Replace with your Stripe publishable key
 
-        function connectPlatform(platform) {
-            const config = platformConfigs[platform];
-            
-            if (config.type === 'oauth' || config.authUrl) {
-                showOAuthFlow(platform);
-            } else if (config.type === 'manual') {
-                showManualImport(platform);
+        // Global State
+        let currentUser = null;
+        let songs = [];
+        let integrations = {};
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', async () => {
+            hideLoading();
+            await checkAuth();
+            initializeCharts();
+            setupEventListeners();
+        });
+
+        // Authentication Functions
+        async function checkAuth() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                currentUser = session.user;
+                updateUIForUser(currentUser);
+                showSection('dashboard');
+                await loadUserData();
             } else {
-                showConnectionInstructions(platform);
+                showSection('landing');
             }
         }
 
-        function disconnectPlatform(platform) {
-            if (confirm(`Are you sure you want to disconnect ${platformConfigs[platform].name}?`)) {
-                // Update UI
-                const card = document.querySelector(`[data-platform="${platform}"]`);
-                card.classList.remove('connected');
-                card.classList.add('disconnected');
-                
-                const status = card.querySelector('span');
-                status.textContent = 'Not Connected';
-                status.className = 'bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full';
-                
-                const button = card.querySelector('button');
-                button.innerHTML = '<i class="fas fa-link mr-2"></i>Connect';
-                button.className = 'w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition';
-                button.onclick = () => connectPlatform(platform);
-                
-                // Remove last sync info
-                const syncInfo = card.querySelector('.text-xs.text-gray-500');
-                if (syncInfo) syncInfo.remove();
-                
-                // Update connected count
-                connectedPlatforms = connectedPlatforms.filter(p => p !== platform);
-                document.getElementById('connected-count').textContent = connectedPlatforms.length;
-                
-                showNotification(`Disconnected from ${platformConfigs[platform].name}`, 'success');
-            }
-        }
+        async function signUp(event) {
+            event.preventDefault();
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const name = document.getElementById('signup-name').value;
 
-        function showOAuthFlow(platform) {
-            const config = platformConfigs[platform];
-            const modalContent = document.getElementById('modal-content');
-            const modalTitle = document.getElementById('modal-title');
-            
-            modalTitle.textContent = `Connect ${config.name}`;
-            
-            if (config.authUrl) {
-                modalContent.innerHTML = `
-                    <div class="space-y-4">
-                        <div class="text-center">
-                            <i class="fas fa-shield-alt text-4xl text-green-500 mb-4"></i>
-                            <h4 class="text-lg font-medium text-gray-900 mb-2">Secure OAuth Connection</h4>
-                            <p class="text-sm text-gray-600 mb-6">You'll be redirected to ${config.name} to authorize LoopLedger to access your account data.</p>
-                        </div>
-                        
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <h5 class="font-medium text-gray-900 mb-2">What we'll access:</h5>
-                            <ul class="text-sm text-gray-600 space-y-1">
-                                <li><i class="fas fa-check text-green-500 mr-2"></i>Basic account information</li>
-                                <li><i class="fas fa-check text-green-500 mr-2"></i>Streaming and revenue data</li>
-                                <li><i class="fas fa-check text-green-500 mr-2"></i>Song metadata and analytics</li>
-                                <li><i class="fas fa-times text-red-500 mr-2"></i>We will NOT access personal data</li>
-                            </ul>
-                        </div>
-                        
-                        <div class="flex space-x-3">
-                            <button onclick="closeModal()" class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition">
-                                Cancel
-                            </button>
-                            <button onclick="initiateOAuth('${platform}')" class="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition">
-                                <i class="fas fa-external-link-alt mr-2"></i>Connect Now
-                            </button>
-                        </div>
-                    </div>
-                `;
-            } else {
-                modalContent.innerHTML = `
-                    <div class="text-center space-y-4">
-                        <i class="fas fa-tools text-4xl text-blue-500"></i>
-                        <h4 class="text-lg font-medium text-gray-900">Integration Setup Required</h4>
-                        <p class="text-sm text-gray-600">${config.instructions}</p>
-                        <button onclick="closeModal()" class="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition">
-                            Got it
-                        </button>
-                    </div>
-                `;
-            }
-            
-            document.getElementById('oauth-modal').classList.remove('hidden');
-        }
-
-        function showManualImport(platform) {
-            const config = platformConfigs[platform];
-            const modalContent = document.getElementById('modal-content');
-            const modalTitle = document.getElementById('modal-title');
-            
-            modalTitle.textContent = `Import ${config.name} Data`;
-            
-            modalContent.innerHTML = `
-                <div class="space-y-4">
-                    <div class="text-center">
-                        <i class="fas fa-upload text-4xl text-blue-500 mb-4"></i>
-                        <h4 class="text-lg font-medium text-gray-900 mb-2">Manual Data Import</h4>
-                        <p class="text-sm text-gray-600 mb-6">${config.instructions}</p>
-                    </div>
-                    
-                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                        <i class="fas fa-file-csv text-3xl text-gray-400 mb-2"></i>
-                        <p class="text-sm text-gray-600 mb-4">Drag and drop your CSV file here, or click to browse</p>
-                        <input type="file" id="file-upload" accept=".csv,.xlsx,.xls" class="hidden" onchange="handleFileUpload(event, '${platform}')">
-                        <button onclick="document.getElementById('file-upload').click()" class="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">
-                            <i class="fas fa-folder-open mr-2"></i>Choose File
-                        </button>
-                    </div>
-                    
-                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                        <div class="flex">
-                            <i class="fas fa-info-circle text-yellow-400 mr-2 mt-0.5"></i>
-                            <div class="text-sm text-yellow-700">
-                                <strong>Supported formats:</strong> CSV, Excel (.xlsx, .xls)<br>
-                                <strong>Data included:</strong> Royalty statements, payment history, song performance
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="flex space-x-3">
-                        <button onclick="closeModal()" class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition">
-                            Cancel
-                        </button>
-                        <button onclick="showImportInstructions('${platform}')" class="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition">
-                            <i class="fas fa-question-circle mr-2"></i>How to Export
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('oauth-modal').classList.remove('hidden');
-        }
-
-        function showConnectionInstructions(platform) {
-            const config = platformConfigs[platform];
-            const modalContent = document.getElementById('modal-content');
-            const modalTitle = document.getElementById('modal-title');
-            
-            modalTitle.textContent = `Setup ${config.name}`;
-            
-            modalContent.innerHTML = `
-                <div class="space-y-4">
-                    <div class="text-center">
-                        <i class="fas fa-cog text-4xl text-indigo-500 mb-4"></i>
-                        <h4 class="text-lg font-medium text-gray-900 mb-2">Integration Setup</h4>
-                        <p class="text-sm text-gray-600 mb-6">${config.instructions}</p>
-                    </div>
-                    
-                    <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-                        <h5 class="font-medium text-indigo-900 mb-2">Next Steps:</h5>
-                        <ol class="text-sm text-indigo-700 space-y-1 list-decimal list-inside">
-                            <li>Contact our integration team</li>
-                            <li>Provide your account credentials securely</li>
-                            <li>We'll configure the connection for you</li>
-                            <li>Start receiving automated updates</li>
-                        </ol>
-                    </div>
-                    
-                    <div class="flex space-x-3">
-                        <button onclick="closeModal()" class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition">
-                            Maybe Later
-                        </button>
-                        <button onclick="contactSupport('${platform}')" class="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition">
-                            <i class="fas fa-headset mr-2"></i>Contact Support
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('oauth-modal').classList.remove('hidden');
-        }
-
-        function initiateOAuth(platform) {
-            const config = platformConfigs[platform];
-            
-            if (config.authUrl) {
-                const params = new URLSearchParams({
-                    client_id: config.clientId,
-                    response_type: 'code',
-                    redirect_uri: config.redirectUri,
-                    scope: Array.isArray(config.scopes) ? config.scopes.join(' ') : config.scopes,
-                    state: platform
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            full_name: name
+                        }
+                    }
                 });
-                
-                const authUrl = `${config.authUrl}?${params.toString()}`;
-                
-                // In a real app, this would redirect to the OAuth provider
-                // For demo purposes, we'll simulate a successful connection
-                simulateSuccessfulConnection(platform);
+
+                if (error) throw error;
+
+                showNotification('Account created! Please check your email to verify.', 'success');
+                showSection('login');
+            } catch (error) {
+                showNotification(error.message, 'error');
             }
         }
 
-        function simulateSuccessfulConnection(platform) {
-            closeModal();
+        async function signIn(event) {
+            event.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) throw error;
+
+                currentUser = data.user;
+                updateUIForUser(currentUser);
+                showSection('dashboard');
+                await loadUserData();
+                showNotification('Welcome back!', 'success');
+            } catch (error) {
+                showNotification(error.message, 'error');
+            }
+        }
+
+        async function signOut() {
+            await supabase.auth.signOut();
+            currentUser = null;
+            updateUIForUser(null);
+            showSection('landing');
+            showNotification('Signed out successfully', 'success');
+        }
+
+        function updateUIForUser(user) {
+            const userMenu = document.getElementById('user-menu');
+            const authButtons = document.getElementById('auth-buttons');
             
-            // Show loading state
-            showNotification(`Connecting to ${platformConfigs[platform].name}...`, 'info');
+            if (user) {
+                document.getElementById('user-email').textContent = user.email;
+                userMenu.classList.remove('hidden');
+                authButtons.classList.add('hidden');
+            } else {
+                userMenu.classList.add('hidden');
+                authButtons.classList.remove('hidden');
+            }
+        }
+
+        // Database Functions
+        async function loadUserData() {
+            if (!currentUser) return;
+
+            try {
+                // Load songs
+                const { data: songsData, error: songsError } = await supabase
+                    .from('songs')
+                    .select('*')
+                    .eq('user_id', currentUser.id);
+
+                if (songsError) throw songsError;
+                songs = songsData || [];
+
+                // Load integrations
+                const { data: integrationsData, error: integrationsError } = await supabase
+                    .from('integrations')
+                    .select('*')
+                    .eq('user_id', currentUser.id);
+
+                if (integrationsError) throw integrationsError;
+                integrations = {};
+                (integrationsData || []).forEach(integration => {
+                    integrations[integration.platform] = integration;
+                });
+
+                updateDashboard();
+                updateSongsList();
+                updateIntegrationsStatus();
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
+        }
+
+        async function uploadSong(event) {
+            event.preventDefault();
+            if (!currentUser) return;
+
+            const songData = {
+                user_id: currentUser.id,
+                title: document.getElementById('song-title').value,
+                artist: document.getElementById('artist-name').value,
+                isrc: document.getElementById('isrc-code').value,
+                release_date: document.getElementById('release-date').value,
+                genre: document.getElementById('genre').value,
+                duration: parseInt(document.getElementById('duration').value) || 0,
+                created_at: new Date().toISOString()
+            };
+
+            try {
+                const { data, error } = await supabase
+                    .from('songs')
+                    .insert([songData])
+                    .select();
+
+                if (error) throw error;
+
+                songs.push(data[0]);
+                updateSongsList();
+                updateDashboard();
+                document.getElementById('song-upload-form').reset();
+                showNotification('Song uploaded successfully!', 'success');
+            } catch (error) {
+                showNotification(error.message, 'error');
+            }
+        }
+
+        // Platform Integration Functions
+        async function connectSpotify() {
+            try {
+                // Simulate OAuth flow
+                showNotification('Redirecting to Spotify...', 'info');
+                
+                // In a real implementation, this would redirect to Spotify OAuth
+                setTimeout(async () => {
+                    const integrationData = {
+                        user_id: currentUser.id,
+                        platform: 'spotify',
+                        access_token: 'mock_token_' + Date.now(),
+                        refresh_token: 'mock_refresh_' + Date.now(),
+                        status: 'connected',
+                        connected_at: new Date().toISOString()
+                    };
+
+                    const { data, error } = await supabase
+                        .from('integrations')
+                        .upsert([integrationData])
+                        .select();
+
+                    if (error) throw error;
+
+                    integrations.spotify = data[0];
+                    updateIntegrationsStatus();
+                    showNotification('Spotify connected successfully!', 'success');
+                }, 1000);
+            } catch (error) {
+                showNotification(error.message, 'error');
+            }
+        }
+
+        async function connectYouTube() {
+            // Similar implementation for YouTube
+            try {
+                showNotification('Redirecting to YouTube...', 'info');
+                
+                setTimeout(async () => {
+                    const integrationData = {
+                        user_id: currentUser.id,
+                        platform: 'youtube',
+                        access_token: 'mock_yt_token_' + Date.now(),
+                        status: 'connected',
+                        connected_at: new Date().toISOString()
+                    };
+
+                    const { data, error } = await supabase
+                        .from('integrations')
+                        .upsert([integrationData])
+                        .select();
+
+                    if (error) throw error;
+
+                    integrations.youtube = data[0];
+                    updateIntegrationsStatus();
+                    showNotification('YouTube connected successfully!', 'success');
+                }, 1000);
+            } catch (error) {
+                showNotification(error.message, 'error');
+            }
+        }
+
+        async function connectApple() {
+            showNotification('Apple Music integration coming soon!', 'info');
+        }
+
+        async function connectASCAP() {
+            showNotification('ASCAP integration in development', 'info');
+        }
+
+        async function connectBMI() {
+            showNotification('BMI integration in development', 'info');
+        }
+
+        async function connectMLC() {
+            showNotification('MLC integration in development', 'info');
+        }
+
+        // UI Update Functions
+        function updateDashboard() {
+            document.getElementById('songs-count').textContent = songs.length;
+            document.getElementById('platforms-count').textContent = Object.keys(integrations).length;
             
-            setTimeout(() => {
-                // Update UI to show connected state
-                const card = document.querySelector(`[data-platform="${platform}"]`);
-                card.classList.remove('disconnected');
-                card.classList.add('connected');
-                
-                const status = card.querySelector('span');
-                status.textContent = 'Connected';
-                status.className = 'bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full';
-                
-                const button = card.querySelector('button');
-                button.innerHTML = '<i class="fas fa-unlink mr-2"></i>Disconnect';
-                button.className = 'w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition';
-                button.onclick = () => disconnectPlatform(platform);
-                
-                // Add sync info
-                const syncInfo = document.createElement('p');
-                syncInfo.className = 'text-xs text-gray-500 mt-2';
-                syncInfo.textContent = 'Last sync: Just now';
-                card.appendChild(syncInfo);
-                
-                // Update connected count
-                if (!connectedPlatforms.includes(platform)) {
-                    connectedPlatforms.push(platform);
+            // Calculate mock earnings
+            const totalEarnings = songs.length * 125.50; // Mock calculation
+            document.getElementById('total-earnings').textContent = `$${totalEarnings.toFixed(2)}`;
+            
+            // Update charts with real data
+            updateCharts();
+        }
+
+        function updateSongsList() {
+            const container = document.getElementById('songs-list');
+            if (songs.length === 0) {
+                container.innerHTML = '<p class="text-gray-400">No songs uploaded yet</p>';
+                return;
+            }
+
+            container.innerHTML = songs.map(song => `
+                <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg mb-3">
+                    <div>
+                        <h4 class="font-semibold">${song.title}</h4>
+                        <p class="text-sm text-gray-400">by ${song.artist}</p>
+                        <p class="text-xs text-gray-500">${song.genre} • ${new Date(song.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-semibold text-green-400">$${(Math.random() * 100).toFixed(2)}</p>
+                        <p class="text-xs text-gray-500">Total Earned</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateIntegrationsStatus() {
+            const platforms = ['spotify', 'youtube', 'apple', 'ascap', 'bmi', 'mlc'];
+            
+            platforms.forEach(platform => {
+                const statusElement = document.getElementById(`${platform}-status`);
+                if (statusElement) {
+                    if (integrations[platform] && integrations[platform].status === 'connected') {
+                        statusElement.innerHTML = '<span class="inline-block px-2 py-1 bg-green-600 text-xs rounded">Connected</span>';
+                    } else {
+                        statusElement.innerHTML = '<span class="inline-block px-2 py-1 bg-red-600 text-xs rounded">Disconnected</span>';
+                    }
                 }
-                document.getElementById('connected-count').textContent = connectedPlatforms.length;
+            });
+        }
+
+        // Charts
+        function initializeCharts() {
+            // Earnings Chart
+            const earningsCtx = document.getElementById('earnings-chart');
+            if (earningsCtx) {
+                new Chart(earningsCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'Earnings',
+                            data: [0, 0, 0, 0, 0, 0],
+                            borderColor: 'rgb(168, 85, 247)',
+                            backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: 'rgb(156, 163, 175)'
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                grid: {
+                                    color: 'rgba(75, 85, 99, 0.3)'
+                                },
+                                ticks: {
+                                    color: 'rgb(156, 163, 175)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    color: 'rgba(75, 85, 99, 0.3)'
+                                },
+                                ticks: {
+                                    color: 'rgb(156, 163, 175)'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Sources Chart
+            const sourcesCtx = document.getElementById('sources-chart');
+            if (sourcesCtx) {
+                new Chart(sourcesCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Spotify', 'Apple Music', 'YouTube', 'Other'],
+                        datasets: [{
+                            data: [0, 0, 0, 0],
+                            backgroundColor: [
+                                'rgb(34, 197, 94)',
+                                'rgb(156, 163, 175)',
+                                'rgb(239, 68, 68)',
+                                'rgb(168, 85, 247)'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: 'rgb(156, 163, 175)'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function updateCharts() {
+            // Update charts with real data when available
+            // This would be implemented based on actual royalty data
+        }
+
+        // Billing Functions
+        async function subscribeToPlan(plan) {
+            if (!currentUser) {
+                showSection('login');
+                return;
+            }
+
+            const prices = {
+                pro: 29,
+                business: 79,
+                enterprise: 199
+            };
+
+            try {
+                // Create Stripe checkout session
+                const response = await fetch('/create-checkout-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        plan: plan,
+                        price: prices[plan],
+                        user_id: currentUser.id
+                    })
+                });
+
+                const session = await response.json();
                 
-                showNotification(`Successfully connected to ${platformConfigs[platform].name}!`, 'success');
+                if (session.url) {
+                    window.location.href = session.url;
+                } else {
+                    // Fallback for demo
+                    showNotification(`Upgrading to ${plan} plan... (Demo mode)`, 'success');
+                }
+            } catch (error) {
+                showNotification('Payment processing error. Please try again.', 'error');
+            }
+        }
+
+        function startFreeTrial() {
+            showSection('signup');
+        }
+
+        // Report Functions
+        async function generateReport(event) {
+            event.preventDefault();
+            
+            const reportType = document.getElementById('report-type').value;
+            const dateRange = document.getElementById('date-range').value;
+            const format = document.getElementById('report-format').value;
+
+            showNotification('Generating report...', 'info');
+
+            // Simulate report generation
+            setTimeout(() => {
+                const reportData = {
+                    id: Date.now(),
+                    type: reportType,
+                    date_range: dateRange,
+                    format: format,
+                    created_at: new Date().toISOString(),
+                    download_url: '#'
+                };
+
+                addReportToList(reportData);
+                showNotification('Report generated successfully!', 'success');
             }, 2000);
         }
 
-        function handleFileUpload(event, platform) {
-            const file = event.target.files[0];
-            if (file) {
-                showNotification(`Uploading ${file.name}...`, 'info');
-                
-                // Simulate file processing
-                setTimeout(() => {
-                    closeModal();
-                    showNotification(`Successfully imported data from ${platformConfigs[platform].name}!`, 'success');
-                    
-                    // Update connection status
-                    simulateSuccessfulConnection(platform);
-                }, 3000);
-            }
-        }
-
-        function showImportInstructions(platform) {
-            const instructions = {
-                ascap: {
-                    steps: [
-                        'Log in to your ASCAP Member Access account',
-                        'Navigate to "Royalty Statements"',
-                        'Select the date range you want to export',
-                        'Click "Download" and choose CSV format',
-                        'Upload the downloaded file here'
-                    ],
-                    url: 'https://www.ascap.com/memberaccess'
-                },
-                bmi: {
-                    steps: [
-                        'Log in to your BMI account online',
-                        'Go to "Royalty Statements"',
-                        'Select your statements by date',
-                        'Export as CSV or Excel file',
-                        'Upload the file to LoopLedger'
-                    ],
-                    url: 'https://repertoire.bmi.com'
-                }
-            };
-            
-            const instruction = instructions[platform];
-            if (instruction) {
-                const modalContent = document.getElementById('modal-content');
-                modalContent.innerHTML = `
-                    <div class="space-y-4">
-                        <h4 class="text-lg font-medium text-gray-900">How to Export ${platformConfigs[platform].name} Data</h4>
-                        
-                        <ol class="space-y-2">
-                            ${instruction.steps.map((step, index) => `
-                                <li class="flex items-start">
-                                    <span class="flex-shrink-0 w-6 h-6 bg-indigo-600 text-white text-sm rounded-full flex items-center justify-center mr-3 mt-0.5">
-                                        ${index + 1}
-                                    </span>
-                                    <span class="text-sm text-gray-700">${step}</span>
-                                </li>
-                            `).join('')}
-                        </ol>
-                        
-                        <div class="flex space-x-3">
-                            <button onclick="showManualImport('${platform}')" class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition">
-                                <i class="fas fa-arrow-left mr-2"></i>Back
-                            </button>
-                            <a href="${instruction.url}" target="_blank" class="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition text-center">
-                                <i class="fas fa-external-link-alt mr-2"></i>Open ${platformConfigs[platform].name}
-                            </a>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        function contactSupport(platform) {
-            closeModal();
-            // This would typically open a support chat or redirect to contact form
-            showNotification(`Opening support chat for ${platformConfigs[platform].name} integration...`, 'info');
-            
-            // Add message to LoopBot
-            addChatMessage('system', `I see you need help with ${platformConfigs[platform].name} integration. I can help you get started! What specific information do you need?`);
-            
-            // Open chat if closed
-            const chat = document.getElementById('loopbot-chat');
-            if (chat.classList.contains('hidden')) {
-                toggleChat();
-            }
-        }
-
-        function closeModal() {
-            document.getElementById('oauth-modal').classList.add('hidden');
-        }
-
-        function showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            const bgColor = {
-                success: 'bg-green-500',
-                error: 'bg-red-500',
-                info: 'bg-blue-500',
-                warning: 'bg-yellow-500'
-            }[type] || 'bg-blue-500';
-            
-            notification.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-x-full`;
-            notification.innerHTML = `
-                <div class="flex items-center">
-                    <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} mr-2"></i>
-                    <span>${message}</span>
+        function addReportToList(report) {
+            const container = document.getElementById('recent-reports');
+            const reportElement = document.createElement('div');
+            reportElement.className = 'flex items-center justify-between p-3 bg-gray-700 rounded-lg';
+            reportElement.innerHTML = `
+                <div>
+                    <p class="font-medium">${report.type} Report</p>
+                    <p class="text-sm text-gray-400">${report.date_range} • ${report.format.toUpperCase()}</p>
                 </div>
+                <button onclick="downloadReport('${report.id}')" class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm">
+                    <i class="fas fa-download mr-1"></i>Download
+                </button>
             `;
             
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.classList.remove('translate-x-full');
-            }, 100);
-            
-            setTimeout(() => {
-                notification.classList.add('translate-x-full');
-                setTimeout(() => {
-                    document.body.removeChild(notification);
-                }, 300);
-            }, 4000);
+            if (container.querySelector('p')) {
+                container.innerHTML = '';
+            }
+            container.appendChild(reportElement);
         }
 
-        // LoopBot Chat Functionality
+        function downloadReport(reportId) {
+            showNotification('Downloading report...', 'info');
+        }
+
+        // Chat Functions
         function toggleChat() {
-            const chat = document.getElementById('loopbot-chat');
-            const toggle = document.getElementById('loopbot-toggle');
-            
-            if (chat.classList.contains('hidden')) {
-                chat.classList.remove('hidden');
-                toggle.innerHTML = '<i class="fas fa-times text-xl"></i>';
-            } else {
-                chat.classList.add('hidden');
-                toggle.innerHTML = '<i class="fas fa-robot text-xl"></i>';
-            }
+            const chatWindow = document.getElementById('chat-window');
+            chatWindow.classList.toggle('hidden');
         }
 
         function sendMessage() {
             const input = document.getElementById('chat-input');
             const message = input.value.trim();
             
-            if (message) {
-                addChatMessage('user', message);
-                input.value = '';
+            if (!message) return;
+
+            addMessageToChat(message, 'user');
+            input.value = '';
+
+            // Simulate bot response
+            setTimeout(() => {
+                const responses = [
+                    "I'd be happy to help! Can you tell me more about what you're looking for?",
+                    "To connect your Spotify account, go to the Integrations section and click 'Connect Spotify'.",
+                    "You can upload songs in the Upload section. Make sure to include all metadata for better tracking.",
+                    "For royalty questions, I recommend checking your dashboard for the latest earnings data.",
+                    "Would you like me to schedule a discovery call with our team?"
+                ];
                 
-                // Simulate bot response
-                setTimeout(() => {
-                    const response = generateBotResponse(message);
-                    addChatMessage('bot', response);
-                }, 1000);
-            }
+                const response = responses[Math.floor(Math.random() * responses.length)];
+                addMessageToChat(response, 'bot');
+            }, 1000);
         }
 
-        function addChatMessage(sender, message) {
-            const chatMessages = document.getElementById('chat-messages');
+        function addMessageToChat(message, sender) {
+            const container = document.getElementById('chat-messages');
             const messageDiv = document.createElement('div');
-            messageDiv.className = 'text-sm mb-3';
+            messageDiv.className = 'mb-4';
             
             if (sender === 'user') {
-                messageDiv.innerHTML = `<div class="text-right"><span class="bg-indigo-600 text-white px-3 py-2 rounded-lg inline-block">${message}</span></div>`;
+                messageDiv.innerHTML = `
+                    <div class="flex justify-end">
+                        <div class="bg-gray-600 text-white p-3 rounded-lg max-w-xs">
+                            <p class="text-sm">${message}</p>
+                        </div>
+                    </div>
+                `;
             } else {
-                messageDiv.innerHTML = `<div class="text-gray-600"><strong>LoopBot:</strong> ${message}</div>`;
+                messageDiv.innerHTML = `
+                    <div class="bg-purple-600 text-white p-3 rounded-lg max-w-xs">
+                        <p class="text-sm">${message}</p>
+                    </div>
+                `;
             }
             
-            chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
         }
 
-        function generateBotResponse(message) {
-            const responses = {
-                'spotify': 'To connect Spotify, click the Connect button on the Spotify card. You\'ll be redirected to Spotify to authorize access to your streaming data.',
-                'youtube': 'YouTube integration provides Content ID revenue and analytics data. Make sure you have a YouTube channel with monetization enabled.',
-                'ascap': 'ASCAP doesn\'t have a public API yet, so you\'ll need to manually import your royalty statements. I can walk you through the export process.',
-                'bmi': 'Similar to ASCAP, BMI requires manual import. You can download CSV files from your BMI account and upload them here.',
-                'mlc': 'The MLC integration is already configured! We use their Public Search API to track your mechanical royalties automatically.',
-                'api': 'We support several APIs including Spotify Web API, YouTube Analytics API, and The MLC Public Search API. Which platform are you interested in?',
-                'help': 'I can help you with platform connections, troubleshooting integrations, or explain how our royalty tracking works. What do you need assistance with?'
-            };
-            
-            const lowerMessage = message.toLowerCase();
-            
-            for (const [key, response] of Object.entries(responses)) {
-                if (lowerMessage.includes(key)) {
-                    return response;
-                }
-            }
-            
-            return 'I can help you connect your music platforms and track royalties. Try asking about specific platforms like "How do I connect Spotify?" or "Help with ASCAP integration".';
-        }
-
-        // Handle Enter key in chat
-        document.getElementById('chat-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-
-        // Initialize page
-        document.addEventListener('DOMContentLoaded', function() {
-            // Update connected count on page load
-            document.getElementById('connected-count').textContent = connectedPlatforms.length;
-            
-            // Add some demo chat messages
-            setTimeout(() => {
-                addChatMessage('system', 'Welcome to LoopLedger! I can help you connect your music accounts. Which platform would you like to start with?');
-            }, 1000);
-        });
-
-        // Navigation
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                // Update active nav item
-                document.querySelectorAll('.nav-link').forEach(l => {
-                    l.classList.remove('text-indigo-600', 'font-medium');
-                    l.classList.add('text-gray-500', 'hover:text-gray-900');
-                });
-                
-                this.classList.remove('text-gray-500', 'hover:text-gray-900');
-                this.classList.add('text-indigo-600', 'font-medium');
-                
-                // Handle navigation (in a real app, this would change views)
-                const target = this.getAttribute('href').substring(1);
-                showNotification(`Navigating to ${target}...`, 'info');
+        // Utility Functions
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
             });
-        });
+
+            // Show target section
+            const targetSection = document.getElementById(`${sectionName}-section`);
+            if (targetSection) {
+                targetSection.classList.remove('hidden');
+            }
+
+            // Update navigation active states
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('bg-gray-700', 'text-white');
+                link.classList.add('text-gray-300');
+            });
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg text-white z-50 ${
+                type === 'success' ? 'bg-green-600' :
+                type === 'error' ? 'bg-red-600' :
+                type === 'warning' ? 'bg-yellow-600' :
+                'bg-blue-600'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function setupEventListeners() {
+            // Chat input enter key
+            document.getElementById('chat-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            // Supabase auth state changes
+            supabase.auth.onAuthStateChange((event, session) => {
+                if (event === 'SIGNED_IN') {
+                    currentUser = session.user;
+                    updateUIForUser(currentUser);
+                    loadUserData();
+                } else if (event === 'SIGNED_OUT') {
+                    currentUser = null;
+                    updateUIForUser(null);
+                }
+            });
+        }
+
+        // Add collaborator function
+        function addCollaborator() {
+            const container = document.getElementById('collaborators');
+            const newCollaborator = document.createElement('div');
+            newCollaborator.className = 'flex items-center space-x-3';
+            newCollaborator.innerHTML = `
+                <input type="text" placeholder="Collaborator Name" class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <input type="number" placeholder="Split %" min="0" max="100" class="w-20 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <button type="button" onclick="this.parentElement.remove()" class="bg-red-600 hover:bg-red-700 px-3 py-2 rounded-md">
+                    <i class="fas fa-minus"></i>
+                </button>
+            `;
+            container.appendChild(newCollaborator);
+        }
+
+        // Modal functions
+        function showModal(content) {
+            document.getElementById('modal-content').innerHTML = content;
+            document.getElementById('modal-overlay').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').classList.add('hidden');
+        }
+
+        function showUpgradeModal() {
+            const content = `
+                <h3 class="text-lg font-semibold mb-4">Upgrade Your Plan</h3>
+                <div class="space-y-4">
+                    <div class="p-4 border border-purple-500 rounded-lg">
+                        <h4 class="font-semibold">Pro Plan - $29/month</h4>
+                        <p class="text-sm text-gray-400">50 tracks, 3 integrations, unlimited reports</p>
+                        <button onclick="subscribeToPlan('pro')" class="mt-2 w-full bg-purple-600 hover:bg-purple-700 py-2 rounded">
+                            Upgrade to Pro
+                        </button>
+                    </div>
+                    <div class="p-4 border border-gray-600 rounded-lg">
+                        <h4 class="font-semibold">Business Plan - $79/month</h4>
+                        <p class="text-sm text-gray-400">200 tracks, 5 integrations, concierge support</p>
+                        <button onclick="subscribeToPlan('business')" class="mt-2 w-full bg-purple-600 hover:bg-purple-700 py-2 rounded">
+                            Upgrade to Business
+                        </button>
+                    </div>
+                </div>
+                <button onclick="closeModal()" class="mt-4 w-full bg-gray-600 hover:bg-gray-700 py-2 rounded">
+                    Cancel
+                </button>
+            `;
+            showModal(content);
+        }
+
+        function addPaymentMethod() {
+            showNotification('Payment method setup coming soon!', 'info');
+        }
+
+        function showScheduleModal() {
+            const content = `
+                <h3 class="text-lg font-semibold mb-4">Schedule Report</h3>
+                <form onsubmit="scheduleReport(event)">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Report Type</label>
+                            <select class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md">
+                                <option value="earnings">Earnings Summary</option>
+                                <option value="detailed">Detailed Breakdown</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Frequency</label>
+                            <select class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md">
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="quarterly">Quarterly</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Email Address</label>
+                            <input type="email" value="${currentUser?.email || ''}" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md">
+                        </div>
+                    </div>
+                    <div class="mt-6 flex space-x-3">
+                        <button type="submit" class="flex-1 bg-purple-600 hover:bg-purple-700 py-2 rounded">
+                            Schedule Report
+                        </button>
+                        <button type="button" onclick="closeModal()" class="flex-1 bg-gray-600 hover:bg-gray-700 py-2 rounded">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            `;
+            showModal(content);
+        }
+
+        function scheduleReport(event) {
+            event.preventDefault();
+            showNotification('Report scheduled successfully!', 'success');
+            closeModal();
+        }
+
+        // Initialize app when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                hideLoading();
+            });
+        } else {
+            hideLoading();
+        }
     </script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"rayId":"94ca3e80de40e277","serverTiming":{"name":{"cfExtPri":true,"cfEdge":true,"cfOrigin":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}},"version":"2025.5.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 </body>
 </html>
-    <script id="html_badge_script1">
-        window.__genspark_remove_badge_link = "https://www.genspark.ai/api/html_badge/" +
-            "remove_badge?token=To%2FBnjzloZ3UfQdcSaYfDh3LEmaewOJnIu9%2Bsod%2B3L6IvZpj1rpz4LkcJZJ%2BbgRIqJUwAELYAE9%2FqksOXEgs00JT88jSc4RbfEnFSOqZyLyAKK%2Buj0nVx5ApiZp2H%2FkYDJRydIA0ne9dhbk38s3oSFE983VWidkW9HotUUh2XnO%2BLXSl2nx9t9H6n9NNj8FmvY%2BYDuRvLDRv9NX52RhcEB7KLxaUyruzhq1j7HWIWb1DElowsGBFtRpPnXGx9dD33d20b22O%2FAaB%2Ft8UGRAWeSxQPgcN0wUIxpxTNGB7gOmJCMOeD5elMXlv0r3prDRqZARWbIcslBUPUyuwEjq%2Bf%2BsOrcFQgBtAAsGa0A7%2BEXr1jNS%2F51j3ZdLh%2BmTbh5Q0kpXTKjbBmOL47axoIfKL6sCf%2FwbMtLrdMI%2FDI1iDw1MAV%2FU14fj2VPg%2Bqf%2B%2FCpcq5JIgdoIiuw6d%2B1EvMhzvDQuxZsmK8NYHp0zR%2BGLcbT7yEwKaxNRwTfi1eVw88RTf5d%2FhBCCCaJ27zWwCIymIb3VdBYNxI%2Bks6a3yrDZhFfc%3D";
-        window.__genspark_locale = "en-US";
-        window.__genspark_token = "To/BnjzloZ3UfQdcSaYfDh3LEmaewOJnIu9+sod+3L6IvZpj1rpz4LkcJZJ+bgRIqJUwAELYAE9/qksOXEgs00JT88jSc4RbfEnFSOqZyLyAKK+uj0nVx5ApiZp2H/kYDJRydIA0ne9dhbk38s3oSFE983VWidkW9HotUUh2XnO+LXSl2nx9t9H6n9NNj8FmvY+YDuRvLDRv9NX52RhcEB7KLxaUyruzhq1j7HWIWb1DElowsGBFtRpPnXGx9dD33d20b22O/AaB/t8UGRAWeSxQPgcN0wUIxpxTNGB7gOmJCMOeD5elMXlv0r3prDRqZARWbIcslBUPUyuwEjq+f+sOrcFQgBtAAsGa0A7+EXr1jNS/51j3ZdLh+mTbh5Q0kpXTKjbBmOL47axoIfKL6sCf/wbMtLrdMI/DI1iDw1MAV/U14fj2VPg+qf+/Cpcq5JIgdoIiuw6d+1EvMhzvDQuxZsmK8NYHp0zR+GLcbT7yEwKaxNRwTfi1eVw88RTf5d/hBCCCaJ27zWwCIymIb3VdBYNxI+ks6a3yrDZhFfc=";
-    </script>
-    
-    <script id="html_notice_dialog_script" src="https://www.genspark.ai/notice_dialog.js"></script>
+
     
