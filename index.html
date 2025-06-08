@@ -3,976 +3,1210 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LoopLedger - Revolutionizing Music Payouts</title>
+    <title>LoopLedger - Track Every Loop. Collect Every Ledger.</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        .hero-text {
+            color: #1a202c !important;
+            text-shadow: 0 2px 4px rgba(255, 255, 255, 0.8) !important;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            backdrop-filter: blur(10px);
+        }
+        .hero-subtext {
+            color: #2d3748 !important;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8) !important;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            backdrop-filter: blur(8px);
+        }
         .gradient-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
-        .music-gradient {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ffd93d 50%, #6bcf7f 100%);
-        }
-        .chatbot-bubble {
+        .chat-bubble {
             position: fixed;
             bottom: 20px;
             right: 20px;
             z-index: 1000;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             width: 60px;
             height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            animation: pulse 2s infinite;
-        }
-        .chatbot-window {
-            position: fixed;
-            bottom: 90px;
-            right: 20px;
-            width: 350px;
-            height: 500px;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            display: none;
-            z-index: 1001;
-            flex-direction: column;
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-        .stat-card {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-            color: white;
-            padding: 2rem;
-            border-radius: 15px;
-            text-align: center;
-            transform: translateY(0);
-            transition: transform 0.3s ease;
-        }
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-        .feature-card {
-            background: white;
-            border-radius: 15px;
-            padding: 2rem;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             transition: all 0.3s ease;
         }
-        .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        .chat-bubble:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
         }
-        .testimonial-card {
-            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
-            color: white;
-            border-radius: 15px;
-            padding: 2rem;
-            margin: 1rem;
-        }
-        .github-integration {
+        .modal {
+            display: none;
             position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 999;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: black;
+        }
+        .section {
+            display: none;
+        }
+        .section.active {
+            display: block;
+        }
+        .nav-link {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .nav-link:hover {
+            color: #667eea;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        .pricing-card {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .pricing-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+        }
+        .pricing-card.featured {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+        }
+        .connection-status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .connected {
+            background-color: #48bb78;
+        }
+        .disconnected {
+            background-color: #f56565;
+        }
+        .demo-dashboard {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .agency-button {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        .agency-button:hover {
+            border-color: #667eea;
+            background: #f7fafc;
+        }
+        .agency-button.connected {
+            border-color: #48bb78;
+            background: #f0fff4;
         }
     </style>
 </head>
 <body class="bg-gray-50">
-    
-    <!-- GitHub Integration Button -->
-    <div class="github-integration">
-        <button id="githubUpdateBtn" class="bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-gray-700 transition-all">
-            <i class="fab fa-github mr-2"></i>Push to GitHub
-        </button>
-    </div>
-
-    <!-- Chatbot Bubble -->
-    <div class="chatbot-bubble" id="chatbotBubble">
-        <i class="fas fa-robot text-white text-xl"></i>
-    </div>
-
-    <!-- Chatbot Window -->
-    <div class="chatbot-window" id="chatbotWindow">
-        <div class="gradient-bg text-white p-4 rounded-t-15 flex justify-between items-center">
-            <div class="flex items-center">
-                <i class="fas fa-robot mr-2"></i>
-                <span class="font-bold">LoopBot Assistant</span>
-            </div>
-            <button id="closeChatbot" class="text-white hover:text-gray-200">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="flex-1 p-4 overflow-y-auto" id="chatMessages">
-            <div class="bg-gray-100 p-3 rounded-lg mb-3">
-                <div class="font-semibold text-sm text-gray-600 mb-1">LoopBot</div>
-                <div>👋 Hi! I'm LoopBot, your AI assistant. I can help you:
-                <br>• Set up your royalty tracking
-                <br>• Connect your music accounts
-                <br>• Understand missing payouts
-                <br>• Navigate the platform
-                <br><br>What would you like to know?</div>
-            </div>
-        </div>
-        <div class="p-4 border-t">
-            <div class="flex">
-                <input type="text" id="chatInput" placeholder="Ask me anything..." class="flex-1 border rounded-l-lg px-3 py-2 focus:outline-none focus:border-blue-500">
-                <button id="sendMessage" class="gradient-bg text-white px-4 py-2 rounded-r-lg hover:opacity-90">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Header -->
-    <header class="gradient-bg text-white shadow-lg">
-        <nav class="container mx-auto px-6 py-4">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center cursor-pointer" onclick="goHome()">
-                    <i class="fas fa-music text-2xl mr-3"></i>
-                    <span class="text-2xl font-bold">LoopLedger</span>
-                    <span class="text-sm ml-2 opacity-75">Track Every Loop. Collect Every Ledger.</span>
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <i class="fas fa-music text-2xl text-purple-600 mr-2"></i>
+                    <span class="text-2xl font-bold text-gray-800 nav-link" onclick="showSection('home')">LoopLedger</span>
                 </div>
-                <div class="hidden md:flex space-x-6">
-                    <a href="#features" class="hover:text-blue-200 transition-colors">Features</a>
-                    <a href="#pricing" class="hover:text-blue-200 transition-colors">Pricing</a>
-                    <a href="#demo" class="hover:text-blue-200 transition-colors">Demo</a>
-                    <a href="#testimonials" class="hover:text-blue-200 transition-colors">Success Stories</a>
+                <div class="hidden md:flex space-x-8">
+                    <span class="nav-link text-gray-700 hover:text-purple-600" onclick="showSection('home')">Home</span>
+                    <span class="nav-link text-gray-700 hover:text-purple-600" onclick="showSection('features')">Features</span>
+                    <span class="nav-link text-gray-700 hover:text-purple-600" onclick="showSection('pricing')">Pricing</span>
+                    <span class="nav-link text-gray-700 hover:text-purple-600" onclick="showSection('demo')">Demo</span>
+                    <span class="nav-link text-gray-700 hover:text-purple-600" onclick="showSection('contact')">Contact</span>
                 </div>
                 <div class="flex space-x-4">
-                    <button onclick="showLogin()" class="bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors">Login</button>
-                    <button onclick="startFreeTrial()" class="bg-yellow-400 text-blue-900 px-6 py-2 rounded-lg font-bold hover:bg-yellow-300 transition-colors">Start Free Trial</button>
+                    <button class="text-gray-700 hover:text-purple-600" onclick="openModal('loginModal')">Login</button>
+                    <button class="btn-primary" onclick="openModal('signupModal')">Sign Up</button>
                 </div>
             </div>
-        </nav>
-    </header>
+        </div>
+    </nav>
 
     <!-- Main Content -->
-    <main id="mainContent">
-        
-        <!-- Hero Section -->
-        <section class="gradient-bg text-white py-20">
-            <div class="container mx-auto px-6 text-center">
-                <h1 class="text-5xl md:text-7xl font-bold mb-6">
-                    Stop Losing <span class="text-yellow-400">$2.5 Billion</span> in Music Royalties
-                </h1>
-                <p class="text-xl md:text-2xl mb-8 max-w-4xl mx-auto leading-relaxed">
-                    The music industry loses billions in unclaimed royalties every year. LoopLedger's AI-powered platform ensures you collect every penny you've earned from ASCAP, BMI, Spotify, YouTube, and 50+ other sources.
-                </p>
-                <div class="flex flex-col md:flex-row justify-center space-y-4 md:space-y-0 md:space-x-6 mb-12">
-                    <button onclick="startFreeTrial()" class="bg-yellow-400 text-blue-900 px-8 py-4 rounded-lg text-xl font-bold hover:bg-yellow-300 transition-all transform hover:scale-105">
-                        <i class="fas fa-rocket mr-2"></i>Start Free Trial - Track 3 Songs
-                    </button>
-                    <button onclick="showDemo()" class="border-2 border-white text-white px-8 py-4 rounded-lg text-xl font-semibold hover:bg-white hover:text-blue-600 transition-all">
-                        <i class="fas fa-play mr-2"></i>View Live Demo
-                    </button>
-                </div>
-                <div class="text-sm opacity-75">
-                    <i class="fas fa-check mr-2"></i>No credit card required • 
-                    <i class="fas fa-check mr-2"></i>3 songs free forever • 
-                    <i class="fas fa-check mr-2"></i>Setup in 2 minutes
-                </div>
-            </div>
-        </section>
-
-        <!-- Problem Statement -->
-        <section class="py-20 bg-white">
-            <div class="container mx-auto px-6">
-                <div class="text-center mb-16">
-                    <h2 class="text-4xl md:text-5xl font-bold text-gray-800 mb-6">
-                        The Music Industry Has a <span class="text-red-500">Payout Crisis</span>
-                    </h2>
-                    <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                        Every day, talented artists like you are losing money because tracking royalties manually is broken, complex, and outdated.
+    <main>
+        <!-- Home Section -->
+        <section id="home" class="section active">
+            <!-- Hero Section -->
+            <div class="gradient-bg min-h-screen flex items-center justify-center text-center">
+                <div class="max-w-4xl mx-auto px-4">
+                    <h1 class="hero-text text-5xl md:text-7xl font-bold mb-6">
+                        Track Every Loop.<br>Collect Every Ledger.
+                    </h1>
+                    <p class="hero-subtext text-xl md:text-2xl mb-8 max-w-3xl mx-auto">
+                        Stop losing money to unclaimed royalties. LoopLedger's AI-powered platform tracks every revenue stream, recovers missed payments, and revolutionizes how artists collect their earnings.
                     </p>
-                </div>
-
-                <div class="grid md:grid-cols-3 gap-8 mb-16">
-                    <div class="stat-card">
-                        <div class="text-4xl font-bold mb-2">$2.5B</div>
-                        <div class="text-lg">Unclaimed royalties annually</div>
-                        <div class="text-sm mt-2 opacity-75">That's money sitting in PRO accounts waiting for artists to claim it</div>
-                    </div>
-                    <div class="stat-card bg-gradient-to-br from-purple-500 to-pink-500">
-                        <div class="text-4xl font-bold mb-2">73%</div>
-                        <div class="text-lg">Of artists miss royalty payments</div>
-                        <div class="text-sm mt-2 opacity-75">Due to registration errors and tracking complexity</div>
-                    </div>
-                    <div class="stat-card bg-gradient-to-br from-green-500 to-blue-500">
-                        <div class="text-4xl font-bold mb-2">15+</div>
-                        <div class="text-lg">Different platforms to track</div>
-                        <div class="text-sm mt-2 opacity-75">ASCAP, BMI, SoundExchange, Spotify, Apple, YouTube, and more</div>
-                    </div>
-                </div>
-
-                <div class="bg-red-50 border-l-4 border-red-400 p-6 rounded-lg">
-                    <h3 class="text-xl font-bold text-red-800 mb-4">Common Problems Artists Face:</h3>
-                    <div class="grid md:grid-cols-2 gap-4 text-red-700">
-                        <div><i class="fas fa-times mr-2"></i>Missing PRO registrations</div>
-                        <div><i class="fas fa-times mr-2"></i>Incorrect split percentages</div>
-                        <div><i class="fas fa-times mr-2"></i>Lost ISRC codes</div>
-                        <div><i class="fas fa-times mr-2"></i>Unclaimed SoundExchange royalties</div>
-                        <div><i class="fas fa-times mr-2"></i>YouTube Content ID issues</div>
-                        <div><i class="fas fa-times mr-2"></i>International royalty gaps</div>
+                    <div class="flex flex-col md:flex-row gap-4 justify-center">
+                        <button class="btn-primary text-lg px-8 py-4" onclick="openModal('signupModal')">Start Free Trial</button>
+                        <button class="bg-white text-gray-800 px-8 py-4 rounded-lg border-2 border-white hover:bg-gray-100 transition" onclick="showSection('demo')">View Demo</button>
                     </div>
                 </div>
             </div>
-        </section>
 
-        <!-- Solution Section -->
-        <section class="py-20 bg-gradient-to-br from-blue-50 to-purple-50">
-            <div class="container mx-auto px-6">
-                <div class="text-center mb-16">
-                    <h2 class="text-4xl md:text-5xl font-bold text-gray-800 mb-6">
-                        How LoopLedger <span class="text-blue-600">Revolutionizes</span> Music Payouts
-                    </h2>
-                    <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                        Our AI-powered platform automatically tracks, detects, and recovers your missing royalties from all sources - so you never lose money again.
-                    </p>
-                </div>
-
-                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <div class="feature-card">
-                        <div class="text-4xl mb-4 text-blue-600"><i class="fas fa-robot"></i></div>
-                        <h3 class="text-xl font-bold mb-3">AI-Powered Detection</h3>
-                        <p class="text-gray-600">Our AI scans all major platforms and automatically detects missing registrations, incorrect splits, and unclaimed royalties.</p>
+            <!-- Why LoopLedger Section -->
+            <div class="py-20 bg-white">
+                <div class="max-w-7xl mx-auto px-4">
+                    <div class="text-center mb-16">
+                        <h2 class="text-4xl font-bold text-gray-800 mb-6">The Music Industry Has a $2.5 Billion Problem</h2>
+                        <p class="text-xl text-gray-600 max-w-3xl mx-auto">Every year, billions in royalties go unclaimed. Artists lose 40% of their earnings to poor tracking, delayed payouts, and complex systems.</p>
                     </div>
                     
-                    <div class="feature-card">
-                        <div class="text-4xl mb-4 text-green-600"><i class="fas fa-link"></i></div>
-                        <h3 class="text-xl font-bold mb-3">One-Click Connections</h3>
-                        <p class="text-gray-600">Connect your ASCAP, BMI, SoundExchange, Spotify, YouTube, and Apple Music accounts with secure OAuth integration.</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <div class="text-4xl mb-4 text-purple-600"><i class="fas fa-chart-line"></i></div>
-                        <h3 class="text-xl font-bold mb-3">Real-Time Tracking</h3>
-                        <p class="text-gray-600">Live dashboard shows earnings from all sources, with alerts when new royalties are available to claim.</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <div class="text-4xl mb-4 text-red-600"><i class="fas fa-exclamation-triangle"></i></div>
-                        <h3 class="text-xl font-bold mb-3">Missing Payment Alerts</h3>
-                        <p class="text-gray-600">Get notified immediately when you're not receiving expected payments, with step-by-step recovery instructions.</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <div class="text-4xl mb-4 text-yellow-600"><i class="fas fa-file-alt"></i></div>
-                        <h3 class="text-xl font-bold mb-3">Automated Dispute Filing</h3>
-                        <p class="text-gray-600">Our system files disputes and recovery claims automatically, or escalates complex cases to our expert team.</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <div class="text-4xl mb-4 text-indigo-600"><i class="fas fa-globe"></i></div>
-                        <h3 class="text-xl font-bold mb-3">Global Royalty Recovery</h3>
-                        <p class="text-gray-600">Track international performance and mechanical royalties from 150+ countries worldwide.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Success Stories -->
-        <section id="testimonials" class="py-20 bg-gray-900 text-white">
-            <div class="container mx-auto px-6">
-                <div class="text-center mb-16">
-                    <h2 class="text-4xl md:text-5xl font-bold mb-6">Real Artists, Real Results</h2>
-                    <p class="text-xl text-gray-300 max-w-3xl mx-auto">
-                        See how LoopLedger has helped artists recover thousands in missing royalties and streamline their music business.
-                    </p>
-                </div>
-
-                <div class="grid md:grid-cols-3 gap-8">
-                    <div class="testimonial-card">
-                        <div class="flex items-center mb-4">
-                            <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-blue-600 font-bold text-xl mr-3">SM</div>
-                            <div>
-                                <div class="font-bold">Sarah Martinez</div>
-                                <div class="text-sm opacity-75">Indie Singer-Songwriter</div>
-                            </div>
-                        </div>
-                        <p class="mb-4">"LoopLedger found $12,000 in unclaimed SoundExchange royalties I didn't even know existed. The platform paid for itself in the first month!"</p>
-                        <div class="text-yellow-400 font-bold">Recovered: $12,000</div>
-                    </div>
-
-                    <div class="testimonial-card bg-gradient-to-br from-purple-600 to-pink-600">
-                        <div class="flex items-center mb-4">
-                            <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-purple-600 font-bold text-xl mr-3">TB</div>
-                            <div>
-                                <div class="font-bold">The Bassline Collective</div>
-                                <div class="text-sm opacity-75">Electronic Music Group</div>
-                            </div>
-                        </div>
-                        <p class="mb-4">"We were missing 40% of our international royalties. LoopLedger's AI found registration gaps across 8 countries and recovered $28,500."</p>
-                        <div class="text-yellow-400 font-bold">Recovered: $28,500</div>
-                    </div>
-
-                    <div class="testimonial-card bg-gradient-to-br from-green-600 to-blue-600">
-                        <div class="flex items-center mb-4">
-                            <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-green-600 font-bold text-xl mr-3">DJ</div>
-                            <div>
-                                <div class="font-bold">David Kim</div>
-                                <div class="text-sm opacity-75">Producer & Label Owner</div>
-                            </div>
-                        </div>
-                        <p class="mb-4">"Managing royalties for 50+ artists was a nightmare. LoopLedger automated everything and increased our revenue by 35%."</p>
-                        <div class="text-yellow-400 font-bold">Revenue increase: 35%</div>
-                    </div>
-                </div>
-
-                <div class="text-center mt-12">
-                    <div class="bg-green-600 inline-block px-6 py-3 rounded-lg">
-                        <div class="text-2xl font-bold">$847,000+</div>
-                        <div class="text-sm">Total recovered for artists in 2024</div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Demo Section -->
-        <section id="demo" class="py-20 bg-white">
-            <div class="container mx-auto px-6">
-                <div class="text-center mb-16">
-                    <h2 class="text-4xl md:text-5xl font-bold text-gray-800 mb-6">See LoopLedger in Action</h2>
-                    <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                        Take a live tour of the platform and see how easy it is to track and recover your music royalties.
-                    </p>
-                </div>
-
-                <div class="max-w-4xl mx-auto">
-                    <div class="bg-gray-100 rounded-lg p-8 mb-8">
-                        <div class="flex justify-center mb-6">
-                            <button onclick="showDemo()" class="bg-blue-600 text-white px-8 py-4 rounded-lg text-xl font-bold hover:bg-blue-700 transition-all">
-                                <i class="fas fa-play mr-3"></i>Launch Interactive Demo
-                            </button>
-                        </div>
-                        <div class="grid md:grid-cols-3 gap-6 text-center">
-                            <div>
-                                <div class="text-3xl mb-2"><i class="fas fa-clock text-blue-600"></i></div>
-                                <div class="font-bold">2 Minutes</div>
-                                <div class="text-sm text-gray-600">Setup time</div>
-                            </div>
-                            <div>
-                                <div class="text-3xl mb-2"><i class="fas fa-database text-green-600"></i></div>
-                                <div class="font-bold">Real Data</div>
-                                <div class="text-sm text-gray-600">Live platform demo</div>
-                            </div>
-                            <div>
-                                <div class="text-3xl mb-2"><i class="fas fa-shield-alt text-purple-600"></i></div>
-                                <div class="font-bold">100% Safe</div>
-                                <div class="text-sm text-gray-600">No account required</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="grid md:grid-cols-2 gap-8">
-                        <div class="feature-card">
-                            <h3 class="text-xl font-bold mb-3">Dashboard Overview</h3>
-                            <p class="text-gray-600 mb-4">See your complete royalty landscape across all platforms in one unified dashboard with AI-powered insights.</p>
-                            <div class="bg-gray-100 h-32 rounded-lg flex items-center justify-center">
-                                <canvas id="demoChart1" width="300" height="120"></canvas>
+                    <div class="grid md:grid-cols-2 gap-12 items-center">
+                        <div>
+                            <h3 class="text-3xl font-bold text-gray-800 mb-6">Current Industry Problems:</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-start">
+                                    <i class="fas fa-exclamation-triangle text-red-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">$2.5 Billion in Unclaimed Royalties Annually</h4>
+                                        <p class="text-gray-600">Massive amounts of money sitting uncollected in industry databases</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <i class="fas fa-clock text-red-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">6-18 Month Payout Delays</h4>
+                                        <p class="text-gray-600">Artists wait months to receive earnings from their music</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <i class="fas fa-chart-line-down text-red-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">Artists Lose 40% of Potential Earnings</h4>
+                                        <p class="text-gray-600">Due to poor tracking and missed revenue streams</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <i class="fas fa-puzzle-piece text-red-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">87% Can't Track All Revenue Streams</h4>
+                                        <p class="text-gray-600">Multiple platforms, agencies, and complex systems create chaos</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         
-                        <div class="feature-card">
-                            <h3 class="text-xl font-bold mb-3">Missing Revenue Detection</h3>
-                            <p class="text-gray-600 mb-4">Watch our AI instantly identify unclaimed royalties and registration gaps across your music catalog.</p>
-                            <div class="space-y-2">
-                                <div class="flex justify-between items-center bg-red-50 p-2 rounded">
-                                    <span class="text-sm">Missing ASCAP Registration</span>
-                                    <span class="text-red-600 font-bold">$2,340</span>
+                        <div>
+                            <h3 class="text-3xl font-bold text-gray-800 mb-6">LoopLedger's Revolution:</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-start">
+                                    <i class="fas fa-robot text-green-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">AI-Powered Tracking</h4>
+                                        <p class="text-gray-600">Never miss a royalty payment with intelligent automation</p>
+                                    </div>
                                 </div>
-                                <div class="flex justify-between items-center bg-yellow-50 p-2 rounded">
-                                    <span class="text-sm">SoundExchange Unclaimed</span>
-                                    <span class="text-yellow-600 font-bold">$890</span>
+                                <div class="flex items-start">
+                                    <i class="fas fa-bolt text-green-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">Real-Time Analytics</h4>
+                                        <p class="text-gray-600">See earnings as they happen across all platforms</p>
+                                    </div>
                                 </div>
-                                <div class="flex justify-between items-center bg-blue-50 p-2 rounded">
-                                    <span class="text-sm">YouTube Content ID</span>
-                                    <span class="text-blue-600 font-bold">$1,250</span>
+                                <div class="flex items-start">
+                                    <i class="fas fa-link text-green-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">Multi-Platform Aggregation</h4>
+                                        <p class="text-gray-600">All revenue streams in one unified dashboard</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <i class="fas fa-gavel text-green-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">Automated Dispute Resolution</h4>
+                                        <p class="text-gray-600">AI fights for your money and recovers missed payments</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Section -->
+            <div class="py-20 gradient-bg">
+                <div class="max-w-7xl mx-auto px-4 text-center">
+                    <h2 class="text-4xl font-bold text-white mb-16">Proven Results for Artists</h2>
+                    <div class="grid md:grid-cols-4 gap-8">
+                        <div class="text-center">
+                            <div class="text-4xl font-bold text-white mb-2">$15,000+</div>
+                            <div class="text-purple-100">Average annual recovery per artist</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-4xl font-bold text-white mb-2">85%</div>
+                            <div class="text-purple-100">Reduction in payout delays</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-4xl font-bold text-white mb-2">15+</div>
+                            <div class="text-purple-100">Revenue streams tracked automatically</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-4xl font-bold text-white mb-2">99.7%</div>
+                            <div class="text-purple-100">Accuracy in royalty matching</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Overview -->
+            <div class="py-20 bg-gray-50">
+                <div class="max-w-7xl mx-auto px-4">
+                    <div class="text-center mb-16">
+                        <h2 class="text-4xl font-bold text-gray-800 mb-6">Everything You Need to Maximize Earnings</h2>
+                        <p class="text-xl text-gray-600">Comprehensive tools to track, recover, and optimize your music revenue</p>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-3 gap-8">
+                        <div class="card text-center">
+                            <i class="fas fa-chart-bar text-4xl text-purple-600 mb-4"></i>
+                            <h3 class="text-xl font-bold mb-4">Real-Time Dashboard</h3>
+                            <p class="text-gray-600">Monitor all your revenue streams in one unified interface with live updates</p>
+                        </div>
+                        <div class="card text-center">
+                            <i class="fas fa-upload text-4xl text-purple-600 mb-4"></i>
+                            <h3 class="text-xl font-bold mb-4">Smart Song Upload</h3>
+                            <p class="text-gray-600">Upload tracks with automatic metadata detection and split agreements</p>
+                        </div>
+                        <div class="card text-center">
+                            <i class="fas fa-search-dollar text-4xl text-purple-600 mb-4"></i>
+                            <h3 class="text-xl font-bold mb-4">Royalty Recovery</h3>
+                            <p class="text-gray-600">AI-powered system detects and recovers missed payments automatically</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Call to Action -->
+            <div class="py-20 bg-white">
+                <div class="max-w-4xl mx-auto text-center px-4">
+                    <h2 class="text-4xl font-bold text-gray-800 mb-6">Ready to Revolutionize Your Music Income?</h2>
+                    <p class="text-xl text-gray-600 mb-8">Join thousands of artists already maximizing their royalty collection with LoopLedger</p>
+                    <button class="btn-primary text-lg px-8 py-4" onclick="openModal('signupModal')">Start Your Free Trial Today</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="section py-20">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl font-bold text-gray-800 mb-6">Powerful Features for Music Professionals</h2>
+                    <p class="text-xl text-gray-600">Everything you need to track, manage, and optimize your music revenue</p>
+                </div>
+                
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="card">
+                        <i class="fas fa-tachometer-alt text-3xl text-purple-600 mb-4"></i>
+                        <h3 class="text-xl font-bold mb-3">Real-Time Dashboard</h3>
+                        <p class="text-gray-600">Monitor earnings from ASCAP, BMI, MLC, SoundExchange, Spotify, Apple Music, and YouTube in one unified interface</p>
+                    </div>
+                    
+                    <div class="card">
+                        <i class="fas fa-upload text-3xl text-purple-600 mb-4"></i>
+                        <h3 class="text-xl font-bold mb-3">Smart Song Upload</h3>
+                        <p class="text-gray-600">Upload songs with automatic metadata detection, ISRC generation, and collaborator split management</p>
+                    </div>
+                    
+                    <div class="card">
+                        <i class="fas fa-file-alt text-3xl text-purple-600 mb-4"></i>
+                        <h3 class="text-xl font-bold mb-3">Automated Reports</h3>
+                        <p class="text-gray-600">Schedule and export detailed PDF/CSV reports with daily, weekly, monthly, or quarterly breakdowns</p>
+                    </div>
+                    
+                    <div class="card">
+                        <i class="fas fa-search-dollar text-3xl text-purple-600 mb-4"></i>
+                        <h3 class="text-xl font-bold mb-3">Royalty Recovery</h3>
+                        <p class="text-gray-600">AI detects payment discrepancies and automatically files disputes to recover missing royalties</p>
+                    </div>
+                    
+                    <div class="card">
+                        <i class="fas fa-users text-3xl text-purple-600 mb-4"></i>
+                        <h3 class="text-xl font-bold mb-3">Client Portal</h3>
+                        <p class="text-gray-600">Secure dashboard for artists, managers, and labels to track songs, earnings, and contract status</p>
+                    </div>
+                    
+                    <div class="card">
+                        <i class="fas fa-cogs text-3xl text-purple-600 mb-4"></i>
+                        <h3 class="text-xl font-bold mb-3">Admin Dashboard</h3>
+                        <p class="text-gray-600">Comprehensive management tools for monitoring users, revenue, API activity, and platform analytics</p>
+                    </div>
+                    
+                    <div class="card">
+                        <i class="fas fa-robot text-3xl text-purple-600 mb-4"></i>
+                        <h3 class="text-xl font-bold mb-3">AI Assistant</h3>
+                        <p class="text-gray-600">LoopBot provides 24/7 guidance for onboarding, support, and royalty questions</p>
+                    </div>
+                    
+                    <div class="card">
+                        <i class="fas fa-link text-3xl text-purple-600 mb-4"></i>
+                        <h3 class="text-xl font-bold mb-3">API Integrations</h3>
+                        <p class="text-gray-600">Direct connections to all major streaming platforms and performing rights organizations</p>
+                    </div>
+                    
+                    <div class="card">
+                        <i class="fas fa-mobile-alt text-3xl text-purple-600 mb-4"></i>
+                        <h3 class="text-xl font-bold mb-3">Mobile App</h3>
+                        <p class="text-gray-600">Access your royalty data anywhere with our responsive mobile application</p>
                     </div>
                 </div>
             </div>
         </section>
 
         <!-- Pricing Section -->
-        <section id="pricing" class="py-20 bg-gradient-to-br from-purple-50 to-blue-50">
-            <div class="container mx-auto px-6">
+        <section id="pricing" class="section py-20 bg-gray-50">
+            <div class="max-w-7xl mx-auto px-4">
                 <div class="text-center mb-16">
-                    <h2 class="text-4xl md:text-5xl font-bold text-gray-800 mb-6">Simple, Transparent Pricing</h2>
-                    <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                        Choose the plan that fits your music career. All plans include our AI-powered royalty detection and recovery tools.
-                    </p>
+                    <h2 class="text-4xl font-bold text-gray-800 mb-6">Choose Your Plan</h2>
+                    <p class="text-xl text-gray-600">Flexible pricing for artists at every stage of their career</p>
                 </div>
-
-                <div class="grid md:grid-cols-4 gap-8 max-w-6xl mx-auto">
-                    <!-- Free Trial -->
-                    <div class="bg-white rounded-lg shadow-lg p-8 border-2 border-green-200">
-                        <div class="text-center">
-                            <h3 class="text-xl font-bold mb-2">Free Trial</h3>
-                            <div class="text-3xl font-bold text-green-600 mb-2">$0</div>
-                            <div class="text-gray-500 mb-6">Forever</div>
-                            <ul class="space-y-3 text-left mb-8">
-                                <li><i class="fas fa-check text-green-500 mr-2"></i>3 tracks</li>
+                
+                <!-- Track-Based Plans -->
+                <div class="mb-16">
+                    <h3 class="text-2xl font-bold text-center text-gray-800 mb-8">Track-Based Plans (Self-Service)</h3>
+                    <div class="grid md:grid-cols-4 gap-6">
+                        <div class="pricing-card">
+                            <h4 class="text-xl font-bold mb-2">Starter</h4>
+                            <div class="text-3xl font-bold text-purple-600 mb-2">$9</div>
+                            <div class="text-gray-600 mb-4">per month</div>
+                            <div class="text-sm text-gray-600 mb-6">10 tracks</div>
+                            <ul class="text-left space-y-2 mb-6">
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Basic dashboard</li>
                                 <li><i class="fas fa-check text-green-500 mr-2"></i>1 integration</li>
-                                <li><i class="fas fa-check text-green-500 mr-2"></i>1 report/month</li>
-                                <li><i class="fas fa-check text-green-500 mr-2"></i>Basic AI detection</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>2 reports/month</li>
                             </ul>
-                            <button onclick="startFreeTrial()" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700 transition-colors">Start Free</button>
+                            <button class="btn-primary w-full" onclick="openModal('signupModal')">Start Trial</button>
                         </div>
-                    </div>
-
-                    <!-- Starter -->
-                    <div class="bg-white rounded-lg shadow-lg p-8">
-                        <div class="text-center">
-                            <h3 class="text-xl font-bold mb-2">Starter</h3>
-                            <div class="text-3xl font-bold text-blue-600 mb-2">$9</div>
-                            <div class="text-gray-500 mb-6">per month</div>
-                            <ul class="space-y-3 text-left mb-8">
-                                <li><i class="fas fa-check text-blue-500 mr-2"></i>10 tracks</li>
-                                <li><i class="fas fa-check text-blue-500 mr-2"></i>3 integrations</li>
-                                <li><i class="fas fa-check text-blue-500 mr-2"></i>Unlimited reports</li>
-                                <li><i class="fas fa-check text-blue-500 mr-2"></i>Advanced AI detection</li>
-                                <li><i class="fas fa-check text-blue-500 mr-2"></i>Email support</li>
-                            </ul>
-                            <button onclick="selectPlan('starter')" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors">Choose Starter</button>
-                        </div>
-                    </div>
-
-                    <!-- Pro -->
-                    <div class="bg-white rounded-lg shadow-lg p-8 border-2 border-purple-400 relative">
-                        <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-purple-600 text-white px-4 py-1 rounded-full text-sm font-bold">Most Popular</div>
-                        <div class="text-center">
-                            <h3 class="text-xl font-bold mb-2">Pro</h3>
+                        
+                        <div class="pricing-card featured">
+                            <h4 class="text-xl font-bold mb-2">Pro</h4>
                             <div class="text-3xl font-bold text-purple-600 mb-2">$29</div>
-                            <div class="text-gray-500 mb-6">per month</div>
-                            <ul class="space-y-3 text-left mb-8">
-                                <li><i class="fas fa-check text-purple-500 mr-2"></i>50 tracks</li>
-                                <li><i class="fas fa-check text-purple-500 mr-2"></i>All integrations</li>
-                                <li><i class="fas fa-check text-purple-500 mr-2"></i>Priority recovery</li>
-                                <li><i class="fas fa-check text-purple-500 mr-2"></i>Split management</li>
-                                <li><i class="fas fa-check text-purple-500 mr-2"></i>Priority support</li>
+                            <div class="text-gray-600 mb-4">per month</div>
+                            <div class="text-sm text-gray-600 mb-6">50 tracks</div>
+                            <ul class="text-left space-y-2 mb-6">
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Full dashboard</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>3 integrations</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Unlimited reports</li>
                             </ul>
-                            <button onclick="selectPlan('pro')" class="w-full bg-purple-600 text-white py-3 rounded-lg font-bold hover:bg-purple-700 transition-colors">Choose Pro</button>
+                            <button class="btn-primary w-full" onclick="openModal('signupModal')">Start Trial</button>
                         </div>
-                    </div>
-
-                    <!-- Enterprise -->
-                    <div class="bg-white rounded-lg shadow-lg p-8">
-                        <div class="text-center">
-                            <h3 class="text-xl font-bold mb-2">Enterprise</h3>
-                            <div class="text-3xl font-bold text-gray-800 mb-2">$199+</div>
-                            <div class="text-gray-500 mb-6">per month</div>
-                            <ul class="space-y-3 text-left mb-8">
-                                <li><i class="fas fa-check text-gray-600 mr-2"></i>Unlimited tracks</li>
-                                <li><i class="fas fa-check text-gray-600 mr-2"></i>White-label</li>
-                                <li><i class="fas fa-check text-gray-600 mr-2"></i>API access</li>
-                                <li><i class="fas fa-check text-gray-600 mr-2"></i>Dedicated manager</li>
-                                <li><i class="fas fa-check text-gray-600 mr-2"></i>Custom integrations</li>
+                        
+                        <div class="pricing-card">
+                            <h4 class="text-xl font-bold mb-2">Business</h4>
+                            <div class="text-3xl font-bold text-purple-600 mb-2">$79</div>
+                            <div class="text-gray-600 mb-4">per month</div>
+                            <div class="text-sm text-gray-600 mb-6">200 tracks</div>
+                            <ul class="text-left space-y-2 mb-6">
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Split manager</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>5 integrations</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Concierge support</li>
                             </ul>
-                            <button onclick="contactSales()" class="w-full bg-gray-800 text-white py-3 rounded-lg font-bold hover:bg-gray-700 transition-colors">Contact Sales</button>
+                            <button class="btn-primary w-full" onclick="openModal('signupModal')">Start Trial</button>
+                        </div>
+                        
+                        <div class="pricing-card">
+                            <h4 class="text-xl font-bold mb-2">Enterprise</h4>
+                            <div class="text-3xl font-bold text-purple-600 mb-2">$199+</div>
+                            <div class="text-gray-600 mb-4">per month</div>
+                            <div class="text-sm text-gray-600 mb-6">500+ tracks</div>
+                            <ul class="text-left space-y-2 mb-6">
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>White-label</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>API access</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Dedicated team</li>
+                            </ul>
+                            <button class="btn-primary w-full" onclick="showSection('contact')">Contact Sales</button>
                         </div>
                     </div>
                 </div>
-
-                <div class="text-center mt-12">
-                    <p class="text-gray-600 mb-4">💡 <strong>Bonus Services Available:</strong></p>
-                    <div class="grid md:grid-cols-3 gap-4 max-w-4xl mx-auto text-sm">
-                        <div class="bg-white p-4 rounded-lg shadow">
-                            <strong>Royalty Recovery Service</strong><br>
-                            10% of recovered funds
+                
+                <!-- Revenue-Based Plans -->
+                <div class="mb-16">
+                    <h3 class="text-2xl font-bold text-center text-gray-800 mb-8">Revenue-Based Plans (Managed Accounts)</h3>
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <div class="pricing-card">
+                            <h4 class="text-xl font-bold mb-2">Emerging Artist</h4>
+                            <div class="text-3xl font-bold text-purple-600 mb-2">$10</div>
+                            <div class="text-gray-600 mb-4">per month + 5% revenue share</div>
+                            <div class="text-sm text-gray-600 mb-6">Under $10,000 annual earnings</div>
+                            <ul class="text-left space-y-2 mb-6">
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Full platform access</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Royalty recovery service</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Basic support</li>
+                            </ul>
+                            <button class="btn-primary w-full" onclick="openModal('signupModal')">Get Started</button>
                         </div>
-                        <div class="bg-white p-4 rounded-lg shadow">
-                            <strong>PRO Setup Service</strong><br>
-                            $99 one-time
+                        
+                        <div class="pricing-card featured">
+                            <h4 class="text-xl font-bold mb-2">Professional</h4>
+                            <div class="text-3xl font-bold text-purple-600 mb-2">$25</div>
+                            <div class="text-gray-600 mb-4">per month + 3% revenue share</div>
+                            <div class="text-sm text-gray-600 mb-6">$10K - $100K annual earnings</div>
+                            <ul class="text-left space-y-2 mb-6">
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Premium features</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Priority support</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Advanced analytics</li>
+                            </ul>
+                            <button class="btn-primary w-full" onclick="openModal('signupModal')">Get Started</button>
                         </div>
-                        <div class="bg-white p-4 rounded-lg shadow">
-                            <strong>Sync Opportunity Alerts</strong><br>
-                            $19/month
+                        
+                        <div class="pricing-card">
+                            <h4 class="text-xl font-bold mb-2">Enterprise</h4>
+                            <div class="text-3xl font-bold text-purple-600 mb-2">$49+</div>
+                            <div class="text-gray-600 mb-4">per month + 1.5-2% revenue share</div>
+                            <div class="text-sm text-gray-600 mb-6">$100K+ annual earnings</div>
+                            <ul class="text-left space-y-2 mb-6">
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>White-glove service</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Dedicated manager</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Custom integrations</li>
+                            </ul>
+                            <button class="btn-primary w-full" onclick="showSection('contact')">Contact Sales</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Add-On Services -->
+                <div>
+                    <h3 class="text-2xl font-bold text-center text-gray-800 mb-8">Add-On Services</h3>
+                    <div class="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <div class="card text-center">
+                            <h4 class="font-bold mb-2">Royalty Recovery Service</h4>
+                            <div class="text-purple-600 font-bold">10% of recovered funds</div>
+                        </div>
+                        <div class="card text-center">
+                            <h4 class="font-bold mb-2">Metadata Validator</h4>
+                            <div class="text-purple-600 font-bold">$9/month</div>
+                        </div>
+                        <div class="card text-center">
+                            <h4 class="font-bold mb-2">Dispute Resolution</h4>
+                            <div class="text-purple-600 font-bold">$49 per case</div>
+                        </div>
+                        <div class="card text-center">
+                            <h4 class="font-bold mb-2">PRO/MLC Onboarding</h4>
+                            <div class="text-purple-600 font-bold">$99 setup</div>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- CTA Section -->
-        <section class="py-20 gradient-bg text-white">
-            <div class="container mx-auto px-6 text-center">
-                <h2 class="text-4xl md:text-5xl font-bold mb-6">
-                    Ready to Claim Your Missing Royalties?
-                </h2>
-                <p class="text-xl mb-8 max-w-3xl mx-auto">
-                    Join thousands of artists who have recovered millions in missing royalties with LoopLedger. 
-                    Start your free trial today and see what you're missing.
-                </p>
-                <div class="flex flex-col md:flex-row justify-center space-y-4 md:space-y-0 md:space-x-6">
-                    <button onclick="startFreeTrial()" class="bg-yellow-400 text-blue-900 px-8 py-4 rounded-lg text-xl font-bold hover:bg-yellow-300 transition-all transform hover:scale-105">
-                        <i class="fas fa-rocket mr-2"></i>Start Free Trial Now
-                    </button>
-                    <button onclick="openChatbot()" class="border-2 border-white text-white px-8 py-4 rounded-lg text-xl font-semibold hover:bg-white hover:text-blue-600 transition-all">
-                        <i class="fas fa-comments mr-2"></i>Chat with LoopBot
-                    </button>
+        <!-- Demo Section -->
+        <section id="demo" class="section py-20">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl font-bold text-gray-800 mb-6">Interactive Demo</h2>
+                    <p class="text-xl text-gray-600">Experience LoopLedger in action with real data and features</p>
                 </div>
-                <div class="mt-8 text-sm opacity-75">
-                    <i class="fas fa-shield-alt mr-2"></i>No credit card required • 
-                    <i class="fas fa-clock mr-2"></i>Setup in 2 minutes • 
-                    <i class="fas fa-headphones mr-2"></i>24/7 support
+                
+                <!-- Demo Dashboard -->
+                <div class="demo-dashboard mb-12">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-bold text-gray-800">Artist Dashboard - Maya Rodriguez</h3>
+                        <div class="flex space-x-2">
+                            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">6 Accounts Connected</span>
+                            <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">Real-time Sync</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Revenue Overview -->
+                    <div class="grid md:grid-cols-4 gap-6 mb-8">
+                        <div class="metric-card">
+                            <div class="text-2xl font-bold mb-2">$8,947.23</div>
+                            <div class="text-purple-100">This Month</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="text-2xl font-bold mb-2">$87,542.89</div>
+                            <div class="text-purple-100">This Year</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="text-2xl font-bold mb-2">$1,247.89</div>
+                            <div class="text-purple-100">Pending</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="text-2xl font-bold mb-2">$3,421.50</div>
+                            <div class="text-purple-100">Recovered</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Platform Breakdown -->
+                    <div class="grid md:grid-cols-2 gap-8 mb-8">
+                        <div class="bg-gray-50 p-6 rounded-lg">
+                            <h4 class="text-lg font-bold mb-4">Revenue by Platform</h4>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <span>Spotify</span>
+                                    <span class="font-bold">$3,421.89</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span>Apple Music</span>
+                                    <span class="font-bold">$2,108.45</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span>YouTube Music</span>
+                                    <span class="font-bold">$1,876.32</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span>ASCAP</span>
+                                    <span class="font-bold">$892.47</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span>BMI</span>
+                                    <span class="font-bold">$648.10</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-50 p-6 rounded-lg">
+                            <h4 class="text-lg font-bold mb-4">Top Performing Songs</h4>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <div class="font-semibold">Midnight Dreams</div>
+                                        <div class="text-sm text-gray-600">2.4M streams</div>
+                                    </div>
+                                    <span class="font-bold">$2,847.33</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <div class="font-semibold">Electric Nights</div>
+                                        <div class="text-sm text-gray-600">1.8M streams</div>
+                                    </div>
+                                    <span class="font-bold">$2,104.67</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <div class="font-semibold">City Lights</div>
+                                        <div class="text-sm text-gray-600">1.2M streams</div>
+                                    </div>
+                                    <span class="font-bold">$1,432.89</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Agency Connections Demo -->
+                    <div class="mb-8">
+                        <h4 class="text-lg font-bold mb-4">Connected Accounts</h4>
+                        <div class="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
+                            <div class="agency-button connected">
+                                <div class="connection-status connected"></div>
+                                <div class="font-semibold">Spotify</div>
+                                <div class="text-sm text-gray-600">Connected</div>
+                            </div>
+                            <div class="agency-button connected">
+                                <div class="connection-status connected"></div>
+                                <div class="font-semibold">Apple Music</div>
+                                <div class="text-sm text-gray-600">Connected</div>
+                            </div>
+                            <div class="agency-button connected">
+                                <div class="connection-status connected"></div>
+                                <div class="font-semibold">ASCAP</div>
+                                <div class="text-sm text-gray-600">Connected</div>
+                            </div>
+                            <div class="agency-button connected">
+                                <div class="connection-status connected"></div>
+                                <div class="font-semibold">BMI</div>
+                                <div class="text-sm text-gray-600">Connected</div>
+                            </div>
+                            <div class="agency-button connected">
+                                <div class="connection-status connected"></div>
+                                <div class="font-semibold">MLC</div>
+                                <div class="text-sm text-gray-600">Connected</div>
+                            </div>
+                            <div class="agency-button">
+                                <div class="connection-status disconnected"></div>
+                                <div class="font-semibold">SoundExchange</div>
+                                <div class="text-sm text-purple-600 cursor-pointer" onclick="openModal('agencyModal')">Connect Now</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Activity -->
+                    <div class="bg-gray-50 p-6 rounded-lg">
+                        <h4 class="text-lg font-bold mb-4">Recent Activity</h4>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-semibold">Payment Received - Spotify</div>
+                                    <div class="text-sm text-gray-600">March 2024 streaming royalties</div>
+                                </div>
+                                <span class="text-green-600 font-bold">+$1,847.32</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-semibold">Discrepancy Detected - YouTube</div>
+                                    <div class="text-sm text-gray-600">Missing performance royalties filed</div>
+                                </div>
+                                <span class="text-yellow-600 font-bold">Dispute Filed</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-semibold">New Song Registered - "Summer Vibes"</div>
+                                    <div class="text-sm text-gray-600">Uploaded to MLC and ASCAP</div>
+                                </div>
+                                <span class="text-blue-600 font-bold">Registered</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Agency Signup Information -->
+                <div class="bg-white p-8 rounded-lg shadow-lg">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">Don't Have Agency Accounts? We'll Help You Sign Up!</h3>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="text-center">
+                            <i class="fas fa-music text-3xl text-purple-600 mb-3"></i>
+                            <h4 class="font-bold mb-2">ASCAP</h4>
+                            <p class="text-sm text-gray-600 mb-3">Performance rights organization for songwriters and publishers</p>
+                            <button class="btn-primary text-sm" onclick="openModal('ascapModal')">Join ASCAP</button>
+                        </div>
+                        <div class="text-center">
+                            <i class="fas fa-broadcast-tower text-3xl text-purple-600 mb-3"></i>
+                            <h4 class="font-bold mb-2">BMI</h4>
+                            <p class="text-sm text-gray-600 mb-3">Performing rights organization with free writer membership</p>
+                            <button class="btn-primary text-sm" onclick="openModal('bmiModal')">Join BMI</button>
+                        </div>
+                        <div class="text-center">
+                            <i class="fas fa-cog text-3xl text-purple-600 mb-3"></i>
+                            <h4 class="font-bold mb-2">MLC</h4>
+                            <p class="text-sm text-gray-600 mb-3">Mechanical licensing collective for streaming royalties</p>
+                            <button class="btn-primary text-sm" onclick="openModal('mlcModal')">Join MLC</button>
+                        </div>
+                        <div class="text-center">
+                            <i class="fas fa-radio text-3xl text-purple-600 mb-3"></i>
+                            <h4 class="font-bold mb-2">SoundExchange</h4>
+                            <p class="text-sm text-gray-600 mb-3">Digital performance rights for recording artists</p>
+                            <button class="btn-primary text-sm" onclick="openModal('soundexchangeModal')">Join SoundExchange</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="section py-20 bg-gray-50">
+            <div class="max-w-4xl mx-auto px-4">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl font-bold text-gray-800 mb-6">Contact Us</h2>
+                    <p class="text-xl text-gray-600">Get in touch with our team for support, sales, or partnership inquiries</p>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-12">
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-6">Get in Touch</h3>
+                        <div class="space-y-6">
+                            <div class="flex items-start">
+                                <i class="fas fa-envelope text-purple-600 mt-1 mr-4"></i>
+                                <div>
+                                    <h4 class="font-semibold text-gray-800">Email Support</h4>
+                                    <p class="text-gray-600">support@loopledger.com</p>
+                                    <p class="text-sm text-gray-500">24/7 support available</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-phone text-purple-600 mt-1 mr-4"></i>
+                                <div>
+                                    <h4 class="font-semibold text-gray-800">Phone Support</h4>
+                                    <p class="text-gray-600">1-800-LOOP-LED</p>
+                                    <p class="text-sm text-gray-500">Mon-Fri 9AM-6PM EST</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-calendar text-purple-600 mt-1 mr-4"></i>
+                                <div>
+                                    <h4 class="font-semibold text-gray-800">Schedule a Demo</h4>
+                                    <p class="text-gray-600">Book a personalized consultation</p>
+                                    <button class="btn-primary mt-2" onclick="openModal('demoModal')">Book Demo Call</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3 class="text-xl font-bold text-gray-800 mb-6">Send us a Message</h3>
+                        <form class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                                <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input type="email" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    <option>General Inquiry</option>
+                                    <option>Sales Question</option>
+                                    <option>Technical Support</option>
+                                    <option>Partnership</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                                <textarea rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+                            </div>
+                            <button type="submit" class="btn-primary w-full">Send Message</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </section>
     </main>
 
-    <!-- Login Modal -->
-    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
-        <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold">Login to LoopLedger</h2>
-                <button onclick="closeLogin()" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times"></i>
-                </button>
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-music text-2xl text-purple-400 mr-2"></i>
+                        <span class="text-2xl font-bold">LoopLedger</span>
+                    </div>
+                    <p class="text-gray-400">Revolutionizing music royalty tracking with AI-powered precision.</p>
+                </div>
+                <div>
+                    <h5 class="font-bold mb-4">Product</h5>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white">Features</a></li>
+                        <li><a href="#" class="hover:text-white">Pricing</a></li>
+                        <li><a href="#" class="hover:text-white">Demo</a></li>
+                        <li><a href="#" class="hover:text-white">API</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="font-bold mb-4">Support</h5>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white">Help Center</a></li>
+                        <li><a href="#" class="hover:text-white">Contact</a></li>
+                        <li><a href="#" class="hover:text-white">Community</a></li>
+                        <li><a href="#" onclick="showSection('admin')" class="hover:text-white">Admin</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="font-bold mb-4">Legal</h5>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" onclick="openModal('privacyModal')" class="hover:text-white">Privacy Policy</a></li>
+                        <li><a href="#" onclick="openModal('termsModal')" class="hover:text-white">Terms of Service</a></li>
+                        <li><a href="#" onclick="openModal('cookieModal')" class="hover:text-white">Cookie Policy</a></li>
+                    </ul>
+                </div>
             </div>
-            <form id="loginForm">
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Email</label>
-                    <input type="email" id="loginEmail" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 LoopLedger. All rights reserved. | Track Every Loop. Collect Every Ledger.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- LoopBot Chatbot -->
+    <div class="chat-bubble" onclick="openModal('chatModal')">
+        <i class="fas fa-comment text-white text-xl"></i>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('loginModal')">&times;</span>
+            <h2 class="text-2xl font-bold mb-6">Login to LoopLedger</h2>
+            <form class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
                 </div>
-                <div class="mb-6">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Password</label>
-                    <input type="password" id="loginPassword" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
                 </div>
-                <button type="submit" class="w-full gradient-bg text-white py-3 rounded-lg font-bold hover:opacity-90 transition-all">
-                    Login
-                </button>
-                <div class="text-center mt-4">
-                    <a href="#" class="text-blue-600 hover:underline">Forgot password?</a>
+                <div class="flex items-center justify-between">
+                    <label class="flex items-center">
+                        <input type="checkbox" class="mr-2">
+                        <span class="text-sm text-gray-600">Remember me</span>
+                    </label>
+                    <a href="#" class="text-sm text-purple-600 hover:underline">Forgot password?</a>
                 </div>
-                <div class="text-center mt-4">
-                    <span class="text-gray-600">Don't have an account? </span>
-                    <button type="button" onclick="showSignup()" class="text-blue-600 hover:underline">Sign up</button>
-                </div>
+                <button type="submit" class="btn-primary w-full">Login</button>
             </form>
+            <div class="mt-4 text-center">
+                <span class="text-gray-600">Don't have an account? </span>
+                <a href="#" onclick="closeModal('loginModal'); openModal('signupModal')" class="text-purple-600 hover:underline">Sign up</a>
+            </div>
         </div>
     </div>
 
     <!-- Signup Modal -->
-    <div id="signupModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
-        <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold">Start Your Free Trial</h2>
-                <button onclick="closeSignup()" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <form id="signupForm">
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Full Name</label>
-                    <input type="text" id="signupName" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required>
+    <div id="signupModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('signupModal')">&times;</span>
+            <h2 class="text-2xl font-bold mb-6">Start Your Free Trial</h2>
+            <form class="space-y-4">
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                        <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                        <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
                 </div>
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Email</label>
-                    <input type="email" id="signupEmail" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
                 </div>
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Password</label>
-                    <input type="password" id="signupPassword" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
                 </div>
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Artist/Band Name</label>
-                    <input type="text" id="artistName" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Artist/Band Name</label>
+                    <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
                 </div>
-                <div class="mb-6">
+                <div>
                     <label class="flex items-center">
                         <input type="checkbox" class="mr-2" required>
-                        <span class="text-sm text-gray-600">I agree to the <a href="#" class="text-blue-600 hover:underline">Terms of Service</a> and <a href="#" class="text-blue-600 hover:underline">Privacy Policy</a></span>
+                        <span class="text-sm text-gray-600">I agree to the <a href="#" onclick="openModal('termsModal')" class="text-purple-600 hover:underline">Terms of Service</a> and <a href="#" onclick="openModal('privacyModal')" class="text-purple-600 hover:underline">Privacy Policy</a></span>
                     </label>
                 </div>
-                <button type="submit" class="w-full gradient-bg text-white py-3 rounded-lg font-bold hover:opacity-90 transition-all">
-                    Start Free Trial
-                </button>
-                <div class="text-center mt-4 text-sm text-gray-600">
-                    No credit card required • 3 songs forever free
-                </div>
+                <button type="submit" class="btn-primary w-full">Start Free Trial</button>
             </form>
+            <div class="mt-4 text-center">
+                <span class="text-gray-600">Already have an account? </span>
+                <a href="#" onclick="closeModal('signupModal'); openModal('loginModal')" class="text-purple-600 hover:underline">Login</a>
+            </div>
         </div>
     </div>
 
-    <!-- Dashboard (Hidden by default) -->
-    <div id="dashboard" class="hidden">
-        <div class="bg-white shadow-lg">
-            <div class="container mx-auto px-6 py-4">
-                <div class="flex justify-between items-center">
-                    <div class="flex items-center">
-                        <i class="fas fa-music text-2xl mr-3 text-blue-600"></i>
-                        <span class="text-2xl font-bold">LoopLedger Dashboard</span>
+    <!-- Chat Modal -->
+    <div id="chatModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('chatModal')">&times;</span>
+            <h2 class="text-xl font-bold mb-4"><i class="fas fa-robot text-purple-600 mr-2"></i>LoopBot Assistant</h2>
+            <div class="h-64 overflow-y-auto bg-gray-50 p-4 rounded-lg mb-4">
+                <div class="space-y-3">
+                    <div class="bg-purple-600 text-white p-3 rounded-lg max-w-xs">
+                        Hi! I'm LoopBot, your AI assistant. How can I help you today?
                     </div>
-                    <div class="flex items-center space-x-4">
-                        <span class="text-gray-600">Welcome back, <span id="userName">Artist</span>!</span>
-                        <button onclick="logout()" class="text-gray-500 hover:text-gray-700">
-                            <i class="fas fa-sign-out-alt"></i> Logout
-                        </button>
+                    <div class="bg-white p-3 rounded-lg max-w-xs ml-auto">
+                        How do I connect my Spotify account?
                     </div>
+                    <div class="bg-purple-600 text-white p-3 rounded-lg max-w-xs">
+                        Great question! Once you sign up and access your dashboard, you'll see a "Connect Accounts" section. Click on Spotify and follow the OAuth flow to link your Spotify for Artists account. Would you like me to guide you through the signup process?
+                    </div>
+                </div>
+            </div>
+            <div class="flex">
+                <input type="text" placeholder="Type your message..." class="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <button class="btn-primary rounded-l-none">Send</button>
+            </div>
+            <div class="mt-4 text-center">
+                <button class="btn-primary" onclick="openModal('demoModal')">Book a Live Demo Call</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agency Modals -->
+    <div id="agencyModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('agencyModal')">&times;</span>
+            <h2 class="text-2xl font-bold mb-6">Connect SoundExchange Account</h2>
+            <div class="text-center">
+                <i class="fas fa-radio text-6xl text-purple-600 mb-4"></i>
+                <h3 class="text-xl font-bold mb-4">SoundExchange</h3>
+                <p class="text-gray-600 mb-6">Connect your SoundExchange account to track digital performance royalties from Pandora, SiriusXM, and other digital radio services.</p>
+                <button class="btn-primary mb-4">Connect SoundExchange Account</button>
+                <div class="text-sm text-gray-500">
+                    <p>Don't have a SoundExchange account? <a href="#" onclick="openModal('soundexchangeModal')" class="text-purple-600 hover:underline">Sign up here</a></p>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="container mx-auto px-6 py-8">
-            <div class="grid md:grid-cols-3 gap-8 mb-8">
-                <div class="bg-gradient-to-r from-green-400 to-green-600 text-white p-6 rounded-lg">
-                    <h3 class="text-lg font-semibold mb-2">Total Earnings</h3>
-                    <div class="text-3xl font-bold">$12,847</div>
-                    <div class="text-sm opacity-75">+23% this month</div>
-                </div>
-                <div class="bg-gradient-to-r from-blue-400 to-blue-600 text-white p-6 rounded-lg">
-                    <h3 class="text-lg font-semibold mb-2">Connected Platforms</h3>
-                    <div class="text-3xl font-bold">8/12</div>
-                    <div class="text-sm opacity-75">4 more available</div>
-                </div>
-                <div class="bg-gradient-to-r from-purple-400 to-purple-600 text-white p-6 rounded-lg">
-                    <h3 class="text-lg font-semibold mb-2">Tracks Monitored</h3>
-                    <div class="text-3xl font-bold">47</div>
-                    <div class="text-sm opacity-75">3 pending review</div>
-                </div>
+    <!-- Privacy Policy Modal -->
+    <div id="privacyModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('privacyModal')">&times;</span>
+            <h2 class="text-2xl font-bold mb-6">Privacy Policy</h2>
+            <div class="space-y-4 text-sm text-gray-700 max-h-96 overflow-y-auto">
+                <p><strong>Effective Date:</strong> January 1, 2024</p>
+                <h3 class="text-lg font-bold">Information We Collect</h3>
+                <p>We collect information you provide directly to us, such as when you create an account, upload songs, or contact us for support. This includes your name, email address, payment information, and music metadata.</p>
+                <h3 class="text-lg font-bold">How We Use Your Information</h3>
+                <p>We use the information we collect to provide, maintain, and improve our services, process transactions, send you updates, and respond to your inquiries.</p>
+                <h3 class="text-lg font-bold">Information Sharing</h3>
+                <p>We share your information with performing rights organizations (ASCAP, BMI, etc.) and streaming platforms as necessary to track and collect your royalties. We do not sell your personal information to third parties.</p>
+                <h3 class="text-lg font-bold">Data Security</h3>
+                <p>We implement appropriate security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.</p>
+                <h3 class="text-lg font-bold">Your Rights</h3>
+                <p>You have the right to access, update, or delete your personal information. You may also opt out of certain communications from us.</p>
+                <h3 class="text-lg font-bold">Contact Us</h3>
+                <p>If you have any questions about this Privacy Policy, please contact us at privacy@loopledger.com.</p>
             </div>
+        </div>
+    </div>
 
-            <div class="grid md:grid-cols-2 gap-8">
-                <div class="bg-white p-6 rounded-lg shadow-lg">
-                    <h3 class="text-xl font-bold mb-4">Earnings Overview</h3>
-                    <canvas id="earningsChart"></canvas>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow-lg">
-                    <h3 class="text-xl font-bold mb-4">Platform Breakdown</h3>
-                    <canvas id="platformChart"></canvas>
-                </div>
+    <!-- Terms of Service Modal -->
+    <div id="termsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('termsModal')">&times;</span>
+            <h2 class="text-2xl font-bold mb-6">Terms of Service</h2>
+            <div class="space-y-4 text-sm text-gray-700 max-h-96 overflow-y-auto">
+                <p><strong>Effective Date:</strong> January 1, 2024</p>
+                <h3 class="text-lg font-bold">Acceptance of Terms</h3>
+                <p>By accessing or using LoopLedger, you agree to be bound by these Terms of Service and all applicable laws and regulations.</p>
+                <h3 class="text-lg font-bold">Description of Service</h3>
+                <p>LoopLedger is a platform that helps artists and music professionals track, manage, and collect royalties from various sources including performing rights organizations and streaming platforms.</p>
+                <h3 class="text-lg font-bold">User Responsibilities</h3>
+                <p>You are responsible for maintaining the confidentiality of your account information and for all activities that occur under your account. You agree to provide accurate and complete information.</p>
+                <h3 class="text-lg font-bold">Subscription and Payment</h3>
+                <p>Subscription fees are billed in advance on a monthly or annual basis. All fees are non-refundable except as required by law.</p>
+                <h3 class="text-lg font-bold">Intellectual Property</h3>
+                <p>You retain ownership of your music and related intellectual property. LoopLedger does not claim any ownership rights in your content.</p>
+                <h3 class="text-lg font-bold">Limitation of Liability</h3>
+                <p>LoopLedger shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of the service.</p>
+                <h3 class="text-lg font-bold">Termination</h3>
+                <p>Either party may terminate this agreement at any time. Upon termination, your access to the service will be discontinued.</p>
             </div>
         </div>
     </div>
 
     <script>
-        // Global state
-        let currentUser = null;
-        let isLoggedIn = false;
-
-        // Navigation functions
-        function goHome() {
-            document.getElementById('mainContent').style.display = 'block';
-            document.getElementById('dashboard').style.display = 'none';
-            window.scrollTo(0, 0);
-        }
-
-        // Modal functions
-        function showLogin() {
-            document.getElementById('loginModal').classList.remove('hidden');
-        }
-
-        function closeLogin() {
-            document.getElementById('loginModal').classList.add('hidden');
-        }
-
-        function showSignup() {
-            document.getElementById('loginModal').classList.add('hidden');
-            document.getElementById('signupModal').classList.remove('hidden');
-        }
-
-        function closeSignup() {
-            document.getElementById('signupModal').classList.add('hidden');
-        }
-
-        function startFreeTrial() {
-            showSignup();
-        }
-
-        function selectPlan(plan) {
-            alert(`Selected ${plan} plan! Redirecting to checkout...`);
-            // Here you would integrate with Stripe or your payment processor
-        }
-
-        function contactSales() {
-            alert('Connecting you with our sales team...');
-            // Here you would open a calendar booking or contact form
-        }
-
-        // Demo function
-        function showDemo() {
-            alert('🎬 Interactive Demo Loading...\n\n✓ Real dashboard interface\n✓ Live royalty tracking\n✓ AI-powered insights\n✓ Platform connections\n\nDemo would open in a new window with guided tour.');
-            // Here you would launch the actual demo
-        }
-
-        // Login form handling
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            
-            // Simulate login
-            if (email && password) {
-                currentUser = { name: email.split('@')[0], email: email };
-                isLoggedIn = true;
-                document.getElementById('userName').textContent = currentUser.name;
-                closeLogin();
-                showDashboard();
-            }
-        });
-
-        // Signup form handling
-        document.getElementById('signupForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const name = document.getElementById('signupName').value;
-            const email = document.getElementById('signupEmail').value;
-            const password = document.getElementById('signupPassword').value;
-            const artistName = document.getElementById('artistName').value;
-            
-            // Simulate signup
-            if (name && email && password && artistName) {
-                currentUser = { name: name, email: email, artistName: artistName };
-                isLoggedIn = true;
-                document.getElementById('userName').textContent = currentUser.name;
-                closeSignup();
-                showDashboard();
-                
-                // Show welcome message
-                setTimeout(() => {
-                    alert(`🎉 Welcome to LoopLedger, ${name}!\n\nYour free trial is now active:\n✓ 3 tracks forever free\n✓ 1 platform integration\n✓ Basic AI detection\n\nLet's start by connecting your first music platform!`);
-                }, 500);
-            }
-        });
-
-        function showDashboard() {
-            document.getElementById('mainContent').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'block';
-            window.scrollTo(0, 0);
-            
-            // Initialize dashboard charts
-            setTimeout(initializeDashboardCharts, 100);
-        }
-
-        function logout() {
-            currentUser = null;
-            isLoggedIn = false;
-            goHome();
-        }
-
-        // Chatbot functionality
-        function toggleChatbot() {
-            const window = document.getElementById('chatbotWindow');
-            window.style.display = window.style.display === 'flex' ? 'none' : 'flex';
-        }
-
-        function openChatbot() {
-            document.getElementById('chatbotWindow').style.display = 'flex';
-        }
-
-        function closeChatbot() {
-            document.getElementById('chatbotWindow').style.display = 'none';
-        }
-
-        document.getElementById('chatbotBubble').addEventListener('click', toggleChatbot);
-        document.getElementById('closeChatbot').addEventListener('click', closeChatbot);
-
-        // Chat functionality
-        document.getElementById('sendMessage').addEventListener('click', sendChatMessage);
-        document.getElementById('chatInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                sendChatMessage();
-            }
-        });
-
-        function sendChatMessage() {
-            const input = document.getElementById('chatInput');
-            const message = input.value.trim();
-            if (!message) return;
-
-            // Add user message
-            addChatMessage(message, 'user');
-            input.value = '';
-
-            // Simulate bot response
-            setTimeout(() => {
-                const response = generateBotResponse(message);
-                addChatMessage(response, 'bot');
-            }, 1000);
-        }
-
-        function addChatMessage(message, sender) {
-            const messagesDiv = document.getElementById('chatMessages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = sender === 'user' ? 'text-right mb-3' : 'mb-3';
-            
-            if (sender === 'user') {
-                messageDiv.innerHTML = `
-                    <div class="bg-blue-600 text-white p-3 rounded-lg inline-block max-w-xs">
-                        ${message}
-                    </div>
-                `;
-            } else {
-                messageDiv.innerHTML = `
-                    <div class="bg-gray-100 p-3 rounded-lg">
-                        <div class="font-semibold text-sm text-gray-600 mb-1">LoopBot</div>
-                        <div>${message}</div>
-                    </div>
-                `;
-            }
-            
-            messagesDiv.appendChild(messageDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
-
-        function generateBotResponse(message) {
-            const lowerMessage = message.toLowerCase();
-            
-            if (lowerMessage.includes('royalt') || lowerMessage.includes('money') || lowerMessage.includes('payment')) {
-                return "💰 Great question! LoopLedger tracks royalties from 15+ sources including ASCAP, BMI, SoundExchange, Spotify, YouTube, and more. Our AI detects missing payments and helps you recover unclaimed funds. Would you like me to show you how to connect your first account?";
-            } else if (lowerMessage.includes('price') || lowerMessage.includes('cost') || lowerMessage.includes('plan')) {
-                return "💳 Our pricing is simple: Start with 3 tracks FREE forever! Paid plans start at $9/month for 10 tracks. All plans include AI-powered royalty detection. Want to start your free trial?";
-            } else if (lowerMessage.includes('setup') || lowerMessage.includes('start') || lowerMessage.includes('begin')) {
-                return "🚀 Setting up LoopLedger takes just 2 minutes! Here's what you'll do:\n1. Create your account\n2. Connect your music platforms (Spotify, ASCAP, etc.)\n3. Upload your songs\n4. Watch the AI find missing royalties!\n\nReady to start your free trial?";
-            } else if (lowerMessage.includes('connect') || lowerMessage.includes('platform') || lowerMessage.includes('integration')) {
-                return "🔗 LoopLedger connects to 15+ platforms:\n• Performance Rights: ASCAP, BMI, SESAC\n• Digital: SoundExchange, Spotify, Apple Music\n• Video: YouTube, TikTok\n• Distribution: CD Baby, DistroKid, TuneCore\n\nWhich platform would you like to connect first?";
-            } else if (lowerMessage.includes('help') || lowerMessage.includes('support')) {
-                return "🎧 I'm here to help! I can assist with:\n• Account setup\n• Platform connections\n• Understanding royalties\n• Pricing questions\n• Technical issues\n\nWhat specific help do you need?";
-            } else {
-                return "🤖 Thanks for reaching out! I can help you with:\n• Setting up royalty tracking\n• Connecting music platforms\n• Understanding pricing\n• Finding missing royalties\n\nWhat would you like to know more about?";
-            }
-        }
-
-        // GitHub integration
-        document.getElementById('githubUpdateBtn').addEventListener('click', function() {
-            if (confirm('Push current LoopLedger version to your GitHub repository?\n\nThis will update your live website with all the latest features.')) {
-                // Simulate GitHub push
-                this.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Pushing...';
-                this.disabled = true;
-                
-                setTimeout(() => {
-                    this.innerHTML = '<i class="fas fa-check mr-2"></i>Updated!';
-                    setTimeout(() => {
-                        this.innerHTML = '<i class="fab fa-github mr-2"></i>Push to GitHub';
-                        this.disabled = false;
-                    }, 2000);
-                }, 3000);
-                
-                // In a real implementation, this would make an API call to GitHub
-                alert('🚀 Successfully pushed to GitHub!\n\nYour website will be updated in 2-3 minutes at:\nhttps://donwansley.github.io/LoopLedger-2/');
-            }
-        });
-
-        // Initialize demo charts
-        function initializeDemoChart() {
-            const ctx = document.getElementById('demoChart1');
-            if (ctx) {
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                        datasets: [{
-                            label: 'Royalty Earnings',
-                            data: [1200, 1900, 3000, 2500, 4200, 3800],
-                            borderColor: 'rgb(59, 130, 246)',
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                            tension: 0.4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        }
-                    }
-                });
-            }
-        }
-
-        // Initialize dashboard charts
-        function initializeDashboardCharts() {
-            // Earnings chart
-            const earningsCtx = document.getElementById('earningsChart');
-            if (earningsCtx) {
-                new Chart(earningsCtx, {
-                    type: 'line',
-                    data: {
-                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                        datasets: [{
-                            label: 'Total Earnings',
-                            data: [3200, 4100, 3800, 5200, 4800, 6200],
-                            borderColor: 'rgb(34, 197, 94)',
-                            backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                            tension: 0.4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        }
-                    }
-                });
-            }
-
-            // Platform chart
-            const platformCtx = document.getElementById('platformChart');
-            if (platformCtx) {
-                new Chart(platformCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Spotify', 'ASCAP', 'YouTube', 'Apple Music', 'SoundExchange'],
-                        datasets: [{
-                            data: [35, 25, 20, 12, 8],
-                            backgroundColor: [
-                                '#1db954',
-                                '#ff6b6b',
-                                '#ff0000',
-                                '#fa243c',
-                                '#0066cc'
-                            ]
-                        }]
-                    },
-                    options: {
-                        responsive: true
-                    }
-                });
-            }
-        }
-
-        // Initialize demo chart on load
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(initializeDemoChart, 500);
-        });
-
-        // Smooth scrolling for anchor links
-        document.addEventListener('DOMContentLoaded', function() {
-            const links = document.querySelectorAll('a[href^="#"]');
-            links.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const target = document.querySelector(this.getAttribute('href'));
-                    if (target) {
-                        target.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'start'
-                        });
-                    }
-                });
+        // Supabase Integration Variables (to be configured with actual keys)
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        
+        // Navigation Functions
+        function showSection(sectionId) {
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(section => {
+                section.classList.remove('active');
             });
+            document.getElementById(sectionId).classList.add('active');
+        }
+
+        // Modal Functions
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target == modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+
+        // Simulated agency connection
+        function connectAgency(agencyName) {
+            alert(`Connecting to ${agencyName}... (This would initiate OAuth flow in production)`);
+        }
+
+        // Form submission handlers
+        document.addEventListener('DOMContentLoaded', function() {
+            // Signup form handler
+            const signupForm = document.querySelector('#signupModal form');
+            if (signupForm) {
+                signupForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    alert('Account created successfully! Welcome to LoopLedger!');
+                    closeModal('signupModal');
+                    showSection('demo');
+                });
+            }
+
+            // Login form handler
+            const loginForm = document.querySelector('#loginModal form');
+            if (loginForm) {
+                loginForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    alert('Login successful! Welcome back!');
+                    closeModal('loginModal');
+                    showSection('demo');
+                });
+            }
+
+            // Contact form handler
+            const contactForm = document.querySelector('#contact form');
+            if (contactForm) {
+                contactForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    alert('Message sent successfully! We\'ll get back to you within 24 hours.');
+                });
+            }
         });
+
+        // Demo interactivity
+        function simulateConnection(platform) {
+            const button = event.target;
+            button.textContent = 'Connecting...';
+            button.disabled = true;
+            
+            setTimeout(() => {
+                button.textContent = 'Connected';
+                button.style.backgroundColor = '#48bb78';
+                const statusDot = button.parentElement.querySelector('.connection-status');
+                if (statusDot) {
+                    statusDot.classList.remove('disconnected');
+                    statusDot.classList.add('connected');
+                }
+            }, 2000);
+        }
+
+        // Agency signup helpers
+        function startAgencySignup(agency) {
+            const agencies = {
+                'ascap': {
+                    name: 'ASCAP',
+                    url: 'https://www.ascap.com/join',
+                    fee: '$50 for writers',
+                    description: 'American Society of Composers, Authors and Publishers'
+                },
+                'bmi': {
+                    name: 'BMI',
+                    url: 'https://www.bmi.com/join',
+                    fee: 'Free for writers',
+                    description: 'Broadcast Music, Inc.'
+                },
+                'mlc': {
+                    name: 'The MLC',
+                    url: 'https://www.themlc.com/register',
+                    fee: 'Free',
+                    description: 'The Mechanical Licensing Collective'
+                },
+                'soundexchange': {
+                    name: 'SoundExchange',
+                    url: 'https://www.soundexchange.com/service-provider/register/',
+                    fee: 'Free',
+                    description: 'Digital performance rights organization'
+                }
+            };
+            
+            const agencyInfo = agencies[agency];
+            if (agencyInfo) {
+                alert(`Redirecting to ${agencyInfo.name} signup...\n\nFee: ${agencyInfo.fee}\nDescription: ${agencyInfo.description}`);
+                // In production, this would open the actual signup page
+                // window.open(agencyInfo.url, '_blank');
+            }
+        }
+
+        // Simulated Supabase functions (for demonstration)
+        const LoopLedgerDB = {
+            signUp: async (email, password, metadata) => {
+                console.log('Supabase signup called', { email, metadata });
+                return { success: true, user: { id: 'demo-user-123', email } };
+            },
+            
+            signIn: async (email, password) => {
+                console.log('Supabase signin called', { email });
+                return { success: true, user: { id: 'demo-user-123', email } };
+            },
+            
+            insertSong: async (songData) => {
+                console.log('Song inserted to Supabase', songData);
+                return { success: true, id: 'song-' + Date.now() };
+            },
+            
+            getRoyalties: async (userId) => {
+                console.log('Fetching royalties for user', userId);
+                return {
+                    thisMonth: 8947.23,
+                    thisYear: 87542.89,
+                    pending: 1247.89,
+                    recovered: 3421.50
+                };
+            }
+        };
+
+        // Initialize demo data
+        function initializeDemoData() {
+            // This would connect to real Supabase in production
+            console.log('Demo mode: Using simulated data');
+        }
+
+        // Call initialization
+        initializeDemoData();
     </script>
 </body>
 </html>
-
-
-    
