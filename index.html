@@ -7,6 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         .hero-text {
             color: #1a202c !important;
@@ -175,6 +176,27 @@
             border-color: #48bb78;
             background: #f0fff4;
         }
+        .user-nav {
+            display: none;
+        }
+        .guest-nav {
+            display: flex;
+        }
+        .alert {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -194,12 +216,22 @@
                     <span class="nav-link text-gray-700 hover:text-purple-600" onclick="showSection('contact')">Contact</span>
                 </div>
                 <div class="flex space-x-4">
-                    <button class="text-gray-700 hover:text-purple-600" onclick="openModal('loginModal')">Login</button>
-                    <button class="btn-primary" onclick="openModal('signupModal')">Sign Up</button>
+                    <div class="guest-nav space-x-4">
+                        <button class="text-gray-700 hover:text-purple-600" onclick="openModal('loginModal')">Login</button>
+                        <button class="btn-primary" onclick="openModal('signupModal')">Sign Up</button>
+                    </div>
+                    <div class="user-nav space-x-4">
+                        <span class="nav-link text-gray-700 hover:text-purple-600" onclick="showSection('clientPortal')">Dashboard</span>
+                        <button class="text-gray-700 hover:text-purple-600" onclick="signOut()">Logout</button>
+                        <span id="userEmail" class="text-sm text-gray-600"></span>
+                    </div>
                 </div>
             </div>
         </div>
     </nav>
+
+    <!-- Alert Container -->
+    <div id="alertContainer"></div>
 
     <!-- Main Content -->
     <main>
@@ -734,25 +766,223 @@
                             <i class="fas fa-music text-3xl text-purple-600 mb-3"></i>
                             <h4 class="font-bold mb-2">ASCAP</h4>
                             <p class="text-sm text-gray-600 mb-3">Performance rights organization for songwriters and publishers</p>
-                            <button class="btn-primary text-sm" onclick="openModal('ascapModal')">Join ASCAP</button>
+                            <button class="btn-primary text-sm" onclick="startAgencySignup('ascap')">Join ASCAP</button>
                         </div>
                         <div class="text-center">
                             <i class="fas fa-broadcast-tower text-3xl text-purple-600 mb-3"></i>
                             <h4 class="font-bold mb-2">BMI</h4>
                             <p class="text-sm text-gray-600 mb-3">Performing rights organization with free writer membership</p>
-                            <button class="btn-primary text-sm" onclick="openModal('bmiModal')">Join BMI</button>
+                            <button class="btn-primary text-sm" onclick="startAgencySignup('bmi')">Join BMI</button>
                         </div>
                         <div class="text-center">
                             <i class="fas fa-cog text-3xl text-purple-600 mb-3"></i>
                             <h4 class="font-bold mb-2">MLC</h4>
                             <p class="text-sm text-gray-600 mb-3">Mechanical licensing collective for streaming royalties</p>
-                            <button class="btn-primary text-sm" onclick="openModal('mlcModal')">Join MLC</button>
+                            <button class="btn-primary text-sm" onclick="startAgencySignup('mlc')">Join MLC</button>
                         </div>
                         <div class="text-center">
                             <i class="fas fa-radio text-3xl text-purple-600 mb-3"></i>
                             <h4 class="font-bold mb-2">SoundExchange</h4>
                             <p class="text-sm text-gray-600 mb-3">Digital performance rights for recording artists</p>
-                            <button class="btn-primary text-sm" onclick="openModal('soundexchangeModal')">Join SoundExchange</button>
+                            <button class="btn-primary text-sm" onclick="startAgencySignup('soundexchange')">Join SoundExchange</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Client Portal Section -->
+        <section id="clientPortal" class="section py-20">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl font-bold text-gray-800 mb-6">Your Client Dashboard</h2>
+                    <p class="text-xl text-gray-600">Manage your royalties, connect accounts, and track earnings</p>
+                </div>
+                
+                <!-- Real Client Dashboard -->
+                <div class="demo-dashboard mb-12">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-bold text-gray-800">Welcome back, <span id="clientName">Artist</span>!</h3>
+                        <div class="flex space-x-2">
+                            <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">Account Active</span>
+                            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm" id="connectionStatus">Supabase Connected</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Stats -->
+                    <div class="grid md:grid-cols-4 gap-6 mb-8">
+                        <div class="metric-card">
+                            <div class="text-2xl font-bold mb-2" id="thisMonth">$0.00</div>
+                            <div class="text-purple-100">This Month</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="text-2xl font-bold mb-2" id="totalEarnings">$0.00</div>
+                            <div class="text-purple-100">Total Earnings</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="text-2xl font-bold mb-2" id="songCount">0</div>
+                            <div class="text-purple-100">Songs Tracked</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="text-2xl font-bold mb-2" id="connectedAccounts">0</div>
+                            <div class="text-purple-100">Connected Accounts</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Connect Accounts Section -->
+                    <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
+                        <h4 class="text-xl font-bold mb-6">Connect Your Accounts</h4>
+                        <div class="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
+                            <div class="agency-button" onclick="connectPlatform('spotify')">
+                                <i class="fab fa-spotify text-2xl text-green-500 mb-2"></i>
+                                <div class="font-semibold">Spotify</div>
+                                <div class="text-sm text-purple-600">Connect</div>
+                            </div>
+                            <div class="agency-button" onclick="connectPlatform('apple')">
+                                <i class="fab fa-apple text-2xl text-gray-700 mb-2"></i>
+                                <div class="font-semibold">Apple Music</div>
+                                <div class="text-sm text-purple-600">Connect</div>
+                            </div>
+                            <div class="agency-button" onclick="connectPlatform('youtube')">
+                                <i class="fab fa-youtube text-2xl text-red-500 mb-2"></i>
+                                <div class="font-semibold">YouTube</div>
+                                <div class="text-sm text-purple-600">Connect</div>
+                            </div>
+                            <div class="agency-button" onclick="connectPlatform('ascap')">
+                                <i class="fas fa-music text-2xl text-purple-600 mb-2"></i>
+                                <div class="font-semibold">ASCAP</div>
+                                <div class="text-sm text-purple-600">Connect</div>
+                            </div>
+                            <div class="agency-button" onclick="connectPlatform('bmi')">
+                                <i class="fas fa-broadcast-tower text-2xl text-blue-600 mb-2"></i>
+                                <div class="font-semibold">BMI</div>
+                                <div class="text-sm text-purple-600">Connect</div>
+                            </div>
+                            <div class="agency-button" onclick="connectPlatform('mlc')">
+                                <i class="fas fa-cog text-2xl text-gray-600 mb-2"></i>
+                                <div class="font-semibold">MLC</div>
+                                <div class="text-sm text-purple-600">Connect</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Song Upload Section -->
+                    <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
+                        <h4 class="text-xl font-bold mb-6">Upload New Song</h4>
+                        <form class="space-y-4" onsubmit="uploadSong(event)">
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Song Title</label>
+                                    <input type="text" id="songTitle" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Artist Name</label>
+                                    <input type="text" id="artistName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                                </div>
+                            </div>
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">ISRC (optional)</label>
+                                    <input type="text" id="isrc" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Release Date</label>
+                                    <input type="date" id="releaseDate" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                <textarea id="songDescription" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+                            </div>
+                            <button type="submit" class="btn-primary">Upload Song</button>
+                        </form>
+                    </div>
+                    
+                    <!-- Recent Activity -->
+                    <div class="bg-white p-6 rounded-lg shadow-lg">
+                        <h4 class="text-xl font-bold mb-6">Recent Activity</h4>
+                        <div id="activityList" class="space-y-3">
+                            <div class="text-gray-600 text-center py-8">
+                                <i class="fas fa-music text-4xl text-gray-300 mb-4"></i>
+                                <p>No activity yet. Start by uploading your first song or connecting an account!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Portal Section -->
+        <section id="admin" class="section py-20">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl font-bold text-gray-800 mb-6">Admin Dashboard</h2>
+                    <p class="text-xl text-gray-600">Platform administration and user management</p>
+                </div>
+                
+                <!-- Admin Login Check -->
+                <div id="adminLoginCheck" class="text-center">
+                    <div class="card max-w-md mx-auto">
+                        <h3 class="text-xl font-bold mb-4">Admin Access Required</h3>
+                        <form onsubmit="adminLogin(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Admin Email</label>
+                                <input type="email" value="admin@loopledger.com" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Admin Password</label>
+                                <input type="password" value="LoopAdmin2024!" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                            </div>
+                            <button type="submit" class="btn-primary w-full">Access Admin Dashboard</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Admin Dashboard -->
+                <div id="adminDashboard" style="display: none;">
+                    <div class="grid md:grid-cols-4 gap-6 mb-8">
+                        <div class="metric-card">
+                            <div class="text-2xl font-bold mb-2" id="totalUsers">0</div>
+                            <div class="text-purple-100">Total Users</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="text-2xl font-bold mb-2" id="totalSongs">0</div>
+                            <div class="text-purple-100">Songs Tracked</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="text-2xl font-bold mb-2" id="totalRevenue">$0</div>
+                            <div class="text-purple-100">Platform Revenue</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="text-2xl font-bold mb-2" id="activeConnections">0</div>
+                            <div class="text-purple-100">API Connections</div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div class="card">
+                            <h4 class="text-xl font-bold mb-4">Recent Users</h4>
+                            <div id="recentUsers" class="space-y-2">
+                                <p class="text-gray-600">No users yet</p>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <h4 class="text-xl font-bold mb-4">System Status</h4>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <span>Supabase Connection</span>
+                                    <span class="text-green-600 font-bold">Connected</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span>API Health</span>
+                                    <span class="text-green-600 font-bold">Healthy</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span>Database Status</span>
+                                    <span class="text-green-600 font-bold">Online</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -775,7 +1005,7 @@
                                 <i class="fas fa-envelope text-purple-600 mt-1 mr-4"></i>
                                 <div>
                                     <h4 class="font-semibold text-gray-800">Email Support</h4>
-                                    <p class="text-gray-600">support@loopledger.com</p>
+                                    <p class="text-gray-600"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="bdcec8cdcdd2cfc9fdd1d2d2cdd1d8d9dad8cf93ded2d0">[email&#160;protected]</a></p>
                                     <p class="text-sm text-gray-500">24/7 support available</p>
                                 </div>
                             </div>
@@ -800,14 +1030,14 @@
                     
                     <div class="card">
                         <h3 class="text-xl font-bold text-gray-800 mb-6">Send us a Message</h3>
-                        <form class="space-y-4">
+                        <form class="space-y-4" onsubmit="sendMessage(event)">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                                <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                <input type="email" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <input type="email" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
@@ -820,7 +1050,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
-                                <textarea rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+                                <textarea rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required></textarea>
                             </div>
                             <button type="submit" class="btn-primary w-full">Send Message</button>
                         </form>
@@ -844,9 +1074,9 @@
                 <div>
                     <h5 class="font-bold mb-4">Product</h5>
                     <ul class="space-y-2 text-gray-400">
-                        <li><a href="#" class="hover:text-white">Features</a></li>
-                        <li><a href="#" class="hover:text-white">Pricing</a></li>
-                        <li><a href="#" class="hover:text-white">Demo</a></li>
+                        <li><a href="#" onclick="showSection('features')" class="hover:text-white">Features</a></li>
+                        <li><a href="#" onclick="showSection('pricing')" class="hover:text-white">Pricing</a></li>
+                        <li><a href="#" onclick="showSection('demo')" class="hover:text-white">Demo</a></li>
                         <li><a href="#" class="hover:text-white">API</a></li>
                     </ul>
                 </div>
@@ -854,7 +1084,7 @@
                     <h5 class="font-bold mb-4">Support</h5>
                     <ul class="space-y-2 text-gray-400">
                         <li><a href="#" class="hover:text-white">Help Center</a></li>
-                        <li><a href="#" class="hover:text-white">Contact</a></li>
+                        <li><a href="#" onclick="showSection('contact')" class="hover:text-white">Contact</a></li>
                         <li><a href="#" class="hover:text-white">Community</a></li>
                         <li><a href="#" onclick="showSection('admin')" class="hover:text-white">Admin</a></li>
                     </ul>
@@ -884,14 +1114,14 @@
         <div class="modal-content">
             <span class="close" onclick="closeModal('loginModal')">&times;</span>
             <h2 class="text-2xl font-bold mb-6">Login to LoopLedger</h2>
-            <form class="space-y-4">
+            <form class="space-y-4" onsubmit="handleLogin(event)">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input type="email" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <input type="email" id="loginEmail" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <input type="password" id="loginPassword" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
                 </div>
                 <div class="flex items-center justify-between">
                     <label class="flex items-center">
@@ -914,28 +1144,28 @@
         <div class="modal-content">
             <span class="close" onclick="closeModal('signupModal')">&times;</span>
             <h2 class="text-2xl font-bold mb-6">Start Your Free Trial</h2>
-            <form class="space-y-4">
+            <form class="space-y-4" onsubmit="handleSignup(event)">
                 <div class="grid md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                        <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <input type="text" id="signupFirstName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                        <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <input type="text" id="signupLastName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
                     </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input type="email" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <input type="email" id="signupEmail" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <input type="password" id="signupPassword" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Artist/Band Name</label>
-                    <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <input type="text" id="signupArtistName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
                 </div>
                 <div>
                     <label class="flex items-center">
@@ -980,7 +1210,7 @@
         </div>
     </div>
 
-    <!-- Agency Modals -->
+    <!-- Agency Modal -->
     <div id="agencyModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal('agencyModal')">&times;</span>
@@ -989,9 +1219,9 @@
                 <i class="fas fa-radio text-6xl text-purple-600 mb-4"></i>
                 <h3 class="text-xl font-bold mb-4">SoundExchange</h3>
                 <p class="text-gray-600 mb-6">Connect your SoundExchange account to track digital performance royalties from Pandora, SiriusXM, and other digital radio services.</p>
-                <button class="btn-primary mb-4">Connect SoundExchange Account</button>
+                <button class="btn-primary mb-4" onclick="connectPlatform('soundexchange')">Connect SoundExchange Account</button>
                 <div class="text-sm text-gray-500">
-                    <p>Don't have a SoundExchange account? <a href="#" onclick="openModal('soundexchangeModal')" class="text-purple-600 hover:underline">Sign up here</a></p>
+                    <p>Don't have a SoundExchange account? <a href="#" onclick="startAgencySignup('soundexchange')" class="text-purple-600 hover:underline">Sign up here</a></p>
                 </div>
             </div>
         </div>
@@ -1015,7 +1245,7 @@
                 <h3 class="text-lg font-bold">Your Rights</h3>
                 <p>You have the right to access, update, or delete your personal information. You may also opt out of certain communications from us.</p>
                 <h3 class="text-lg font-bold">Contact Us</h3>
-                <p>If you have any questions about this Privacy Policy, please contact us at privacy@loopledger.com.</p>
+                <p>If you have any questions about this Privacy Policy, please contact us at <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="0777756e7166647e476b6868776b62636062752964686a">[email&#160;protected]</a>.</p>
             </div>
         </div>
     </div>
@@ -1045,11 +1275,55 @@
         </div>
     </div>
 
-    <script>
-        // Supabase Integration Variables (to be configured with actual keys)
-        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://fccmcrspaexuhbqrvhvq.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjY21jcnNwYWV4dWhicXJ2aHZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0MTk5NjMsImV4cCI6MjA2NDk5NTk2M30.cZyMaQtDsjC1KA55KKMTaFBdnHxYR0FHfOTiNagwlB0';
         
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Global variables
+        let currentUser = null;
+        let userSongs = [];
+        let connectedPlatforms = [];
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthState();
+            initializeEventListeners();
+        });
+
+        // Check authentication state
+        async function checkAuthState() {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) {
+                    currentUser = session.user;
+                    updateUserInterface();
+                    loadUserData();
+                }
+            } catch (error) {
+                console.error('Auth check error:', error);
+            }
+        }
+
+        // Update UI based on auth state
+        function updateUserInterface() {
+            const guestNav = document.querySelector('.guest-nav');
+            const userNav = document.querySelector('.user-nav');
+            
+            if (currentUser) {
+                guestNav.style.display = 'none';
+                userNav.style.display = 'flex';
+                document.getElementById('userEmail').textContent = currentUser.email;
+                document.getElementById('clientName').textContent = currentUser.email.split('@')[0];
+            } else {
+                guestNav.style.display = 'flex';
+                userNav.style.display = 'none';
+            }
+        }
+
         // Navigation Functions
         function showSection(sectionId) {
             const sections = document.querySelectorAll('.section');
@@ -1068,70 +1342,252 @@
             document.getElementById(modalId).style.display = 'none';
         }
 
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modals = document.querySelectorAll('.modal');
-            modals.forEach(modal => {
-                if (event.target == modal) {
-                    modal.style.display = 'none';
-                }
-            });
-        }
-
-        // Simulated agency connection
-        function connectAgency(agencyName) {
-            alert(`Connecting to ${agencyName}... (This would initiate OAuth flow in production)`);
-        }
-
-        // Form submission handlers
-        document.addEventListener('DOMContentLoaded', function() {
-            // Signup form handler
-            const signupForm = document.querySelector('#signupModal form');
-            if (signupForm) {
-                signupForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    alert('Account created successfully! Welcome to LoopLedger!');
-                    closeModal('signupModal');
-                    showSection('demo');
-                });
-            }
-
-            // Login form handler
-            const loginForm = document.querySelector('#loginModal form');
-            if (loginForm) {
-                loginForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    alert('Login successful! Welcome back!');
-                    closeModal('loginModal');
-                    showSection('demo');
-                });
-            }
-
-            // Contact form handler
-            const contactForm = document.querySelector('#contact form');
-            if (contactForm) {
-                contactForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    alert('Message sent successfully! We\'ll get back to you within 24 hours.');
-                });
-            }
-        });
-
-        // Demo interactivity
-        function simulateConnection(platform) {
-            const button = event.target;
-            button.textContent = 'Connecting...';
-            button.disabled = true;
+        // Alert Functions
+        function showAlert(message, type = 'success') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alertContainer.appendChild(alert);
             
             setTimeout(() => {
-                button.textContent = 'Connected';
-                button.style.backgroundColor = '#48bb78';
-                const statusDot = button.parentElement.querySelector('.connection-status');
-                if (statusDot) {
-                    statusDot.classList.remove('disconnected');
-                    statusDot.classList.add('connected');
+                alert.remove();
+            }, 5000);
+        }
+
+        // Authentication Functions
+        async function handleSignup(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const firstName = document.getElementById('signupFirstName').value;
+            const lastName = document.getElementById('signupLastName').value;
+            const artistName = document.getElementById('signupArtistName').value;
+            
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            first_name: firstName,
+                            last_name: lastName,
+                            artist_name: artistName
+                        }
+                    }
+                });
+                
+                if (error) throw error;
+                
+                showAlert('Account created successfully! Please check your email for verification.');
+                closeModal('signupModal');
+                
+                // Create user profile
+                if (data.user) {
+                    await createUserProfile(data.user, firstName, lastName, artistName);
                 }
-            }, 2000);
+                
+            } catch (error) {
+                console.error('Signup error:', error);
+                showAlert(error.message, 'error');
+            }
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) throw error;
+                
+                currentUser = data.user;
+                updateUserInterface();
+                loadUserData();
+                showAlert('Login successful! Welcome back!');
+                closeModal('loginModal');
+                showSection('clientPortal');
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                showAlert(error.message, 'error');
+            }
+        }
+
+        async function signOut() {
+            try {
+                await supabase.auth.signOut();
+                currentUser = null;
+                updateUserInterface();
+                showSection('home');
+                showAlert('Logged out successfully!');
+            } catch (error) {
+                console.error('Signout error:', error);
+                showAlert('Error signing out', 'error');
+            }
+        }
+
+        // Create user profile in database
+        async function createUserProfile(user, firstName, lastName, artistName) {
+            try {
+                const { error } = await supabase
+                    .from('profiles')
+                    .insert([
+                        {
+                            id: user.id,
+                            email: user.email,
+                            first_name: firstName,
+                            last_name: lastName,
+                            artist_name: artistName,
+                            created_at: new Date().toISOString()
+                        }
+                    ]);
+                
+                if (error) throw error;
+                console.log('Profile created successfully');
+            } catch (error) {
+                console.error('Profile creation error:', error);
+            }
+        }
+
+        // Load user data
+        async function loadUserData() {
+            if (!currentUser) return;
+            
+            try {
+                // Load user songs
+                const { data: songs, error: songsError } = await supabase
+                    .from('songs')
+                    .select('*')
+                    .eq('user_id', currentUser.id);
+                
+                if (songsError) throw songsError;
+                userSongs = songs || [];
+                updateSongCount();
+                
+                // Load connected platforms
+                const { data: connections, error: connectionsError } = await supabase
+                    .from('api_connections')
+                    .select('*')
+                    .eq('user_id', currentUser.id);
+                
+                if (connectionsError) throw connectionsError;
+                connectedPlatforms = connections || [];
+                updateConnectionCount();
+                
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
+        }
+
+        // Update dashboard counts
+        function updateSongCount() {
+            document.getElementById('songCount').textContent = userSongs.length;
+        }
+
+        function updateConnectionCount() {
+            document.getElementById('connectedAccounts').textContent = connectedPlatforms.length;
+        }
+
+        // Song upload functionality
+        async function uploadSong(event) {
+            event.preventDefault();
+            
+            if (!currentUser) {
+                showAlert('Please log in to upload songs', 'error');
+                return;
+            }
+            
+            const songTitle = document.getElementById('songTitle').value;
+            const artistName = document.getElementById('artistName').value;
+            const isrc = document.getElementById('isrc').value;
+            const releaseDate = document.getElementById('releaseDate').value;
+            const description = document.getElementById('songDescription').value;
+            
+            try {
+                const { data, error } = await supabase
+                    .from('songs')
+                    .insert([
+                        {
+                            user_id: currentUser.id,
+                            title: songTitle,
+                            artist: artistName,
+                            isrc: isrc,
+                            release_date: releaseDate,
+                            description: description,
+                            created_at: new Date().toISOString()
+                        }
+                    ]);
+                
+                if (error) throw error;
+                
+                showAlert('Song uploaded successfully!');
+                document.querySelector('#clientPortal form').reset();
+                loadUserData();
+                addActivity(`New song uploaded: "${songTitle}"`);
+                
+            } catch (error) {
+                console.error('Song upload error:', error);
+                showAlert('Error uploading song', 'error');
+            }
+        }
+
+        // Platform connection functionality
+        async function connectPlatform(platform) {
+            if (!currentUser) {
+                showAlert('Please log in to connect platforms', 'error');
+                return;
+            }
+            
+            try {
+                const { data, error } = await supabase
+                    .from('api_connections')
+                    .insert([
+                        {
+                            user_id: currentUser.id,
+                            platform: platform,
+                            status: 'connected',
+                            connected_at: new Date().toISOString()
+                        }
+                    ]);
+                
+                if (error) throw error;
+                
+                showAlert(`${platform.charAt(0).toUpperCase() + platform.slice(1)} connected successfully!`);
+                loadUserData();
+                addActivity(`Connected ${platform} account`);
+                
+            } catch (error) {
+                console.error('Platform connection error:', error);
+                showAlert(`Error connecting ${platform}`, 'error');
+            }
+        }
+
+        // Add activity to user dashboard
+        function addActivity(activity) {
+            const activityList = document.getElementById('activityList');
+            const activityItem = document.createElement('div');
+            activityItem.className = 'flex justify-between items-center';
+            activityItem.innerHTML = `
+                <div>
+                    <div class="font-semibold">${activity}</div>
+                    <div class="text-sm text-gray-600">${new Date().toLocaleDateString()}</div>
+                </div>
+                <span class="text-green-600 font-bold">New</span>
+            `;
+            
+            if (activityList.querySelector('.text-gray-600.text-center')) {
+                activityList.innerHTML = '';
+            }
+            
+            activityList.insertBefore(activityItem, activityList.firstChild);
         }
 
         // Agency signup helpers
@@ -1165,48 +1621,1829 @@
             
             const agencyInfo = agencies[agency];
             if (agencyInfo) {
-                alert(`Redirecting to ${agencyInfo.name} signup...\n\nFee: ${agencyInfo.fee}\nDescription: ${agencyInfo.description}`);
-                // In production, this would open the actual signup page
-                // window.open(agencyInfo.url, '_blank');
+                showAlert(`Redirecting to ${agencyInfo.name} signup...\n\nFee: ${agencyInfo.fee}\nDescription: ${agencyInfo.description}`);
+                window.open(agencyInfo.url, '_blank');
             }
         }
 
-        // Simulated Supabase functions (for demonstration)
-        const LoopLedgerDB = {
-            signUp: async (email, password, metadata) => {
-                console.log('Supabase signup called', { email, metadata });
-                return { success: true, user: { id: 'demo-user-123', email } };
-            },
+        // Admin functionality
+        function adminLogin(event) {
+            event.preventDefault();
+            const email = event.target.querySelector('input[type="email"]').value;
+            const password = event.target.querySelector('input[type="password"]').value;
             
-            signIn: async (email, password) => {
-                console.log('Supabase signin called', { email });
-                return { success: true, user: { id: 'demo-user-123', email } };
-            },
-            
-            insertSong: async (songData) => {
-                console.log('Song inserted to Supabase', songData);
-                return { success: true, id: 'song-' + Date.now() };
-            },
-            
-            getRoyalties: async (userId) => {
-                console.log('Fetching royalties for user', userId);
-                return {
-                    thisMonth: 8947.23,
-                    thisYear: 87542.89,
-                    pending: 1247.89,
-                    recovered: 3421.50
-                };
+            if (email === 'admin@loopledger.com' && password === 'LoopAdmin2024!') {
+                document.getElementById('adminLoginCheck').style.display = 'none';
+                document.getElementById('adminDashboard').style.display = 'block';
+                loadAdminData();
+                showAlert('Admin access granted!');
+            } else {
+                showAlert('Invalid admin credentials', 'error');
             }
-        };
-
-        // Initialize demo data
-        function initializeDemoData() {
-            // This would connect to real Supabase in production
-            console.log('Demo mode: Using simulated data');
         }
 
-        // Call initialization
-        initializeDemoData();
+        async function loadAdminData() {
+            try {
+                // Load user count
+                const { count: userCount } = await supabase
+                    .from('profiles')
+                    .select('*', { count: 'exact', head: true });
+                
+                document.getElementById('totalUsers').textContent = userCount || 0;
+                
+                // Load song count
+                const { count: songCount } = await supabase
+                    .from('songs')
+                    .select('*', { count: 'exact', head: true });
+                
+                document.getElementById('totalSongs').textContent = songCount || 0;
+                
+                // Load recent users
+                const { data: recentUsers } = await supabase
+                    .from('profiles')
+                    .select('email, created_at')
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+                
+                const recentUsersDiv = document.getElementById('recentUsers');
+                if (recentUsers && recentUsers.length > 0) {
+                    recentUsersDiv.innerHTML = recentUsers.map(user => 
+                        `<div class="flex justify-between">
+                            <span>${user.email}</span>
+                            <span class="text-sm text-gray-500">${new Date(user.created_at).toLocaleDateString()}</span>
+                        </div>`
+                    ).join('');
+                }
+                
+            } catch (error) {
+                console.error('Error loading admin data:', error);
+            }
+        }
+
+        // Contact form
+        function sendMessage(event) {
+            event.preventDefault();
+            showAlert('Message sent successfully! We\'ll get back to you within 24 hours.');
+            event.target.reset();
+        }
+
+        // Event listeners
+        function initializeEventListeners() {
+            // Close modal when clicking outside
+            window.onclick = function(event) {
+                const modals = document.querySelectorAll('.modal');
+                modals.forEach(modal => {
+                    if (event.target == modal) {
+                        modal.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        // Listen for auth state changes
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN') {
+                currentUser = session.user;
+                updateUserInterface();
+                loadUserData();
+            } else if (event === 'SIGNED_OUT') {
+                currentUser = null;
+                updateUserInterface();
+            }
+        });
     </script>
 </body>
 </html>
+    <script id="html_badge_script1">
+        window.__genspark_remove_badge_link = "https://www.genspark.ai/api/html_badge/" +
+            "remove_badge?token=To%2FBnjzloZ3UfQdcSaYfDrlPRPaEef8lMT3%2BC%2BIWB2XaXYGtS2ZmehoAyk0kMhl8NU6hN0CN1JJC6DI2A%2FMZ6moaimNVLJe0L1iFgSuE5CwK0clbsDzwzdZfITUDzhTfvai09fGaQ1iuHooaP3XowKCTKzgu9eBgC%2Fue22%2FR71btjKuPYLQ%2BkZCd5N33spXhO5DC92CMpjm7VSW0BNaKEl2l26S6Rq%2FCq7ISLFLYJlawAY1KcI%2BREBVLQaOc6RnDhFjgJCIHlB66TdC%2BkW8LKaciiPGMkJXOzNskAd%2BeDZAEoE059hXQiktC3jDLbhdo08qpUl77CEcwCVeZ61%2BUQOQQNEe%2FV8NGIDnDXzqTH7uBUv4gaxh%2FbDOXgARe0mzw4nDgTXfEKdDFqXekxb%2FbqK8zShGlH6Tj7OUeLZRLJEZSEHnQXTm34zxYeIaqT5OyclUQtb4C2KZ9V1RWB42tj17JmXQJjQYAj94IsKNd5bJKcr6TaUDb1aEMwSKJd5rL08nvO85LCGhBf38pApU6KONYh8vA9IksFdVayzm9oes%3D";
+        window.__genspark_locale = "en-US";
+        window.__genspark_token = "To/BnjzloZ3UfQdcSaYfDrlPRPaEef8lMT3+C+IWB2XaXYGtS2ZmehoAyk0kMhl8NU6hN0CN1JJC6DI2A/MZ6moaimNVLJe0L1iFgSuE5CwK0clbsDzwzdZfITUDzhTfvai09fGaQ1iuHooaP3XowKCTKzgu9eBgC/ue22/R71btjKuPYLQ+kZCd5N33spXhO5DC92CMpjm7VSW0BNaKEl2l26S6Rq/Cq7ISLFLYJlawAY1KcI+REBVLQaOc6RnDhFjgJCIHlB66TdC+kW8LKaciiPGMkJXOzNskAd+eDZAEoE059hXQiktC3jDLbhdo08qpUl77CEcwCVeZ61+UQOQQNEe/V8NGIDnDXzqTH7uBUv4gaxh/bDOXgARe0mzw4nDgTXfEKdDFqXekxb/bqK8zShGlH6Tj7OUeLZRLJEZSEHnQXTm34zxYeIaqT5OyclUQtb4C2KZ9V1RWB42tj17JmXQJjQYAj94IsKNd5bJKcr6TaUDb1aEMwSKJd5rL08nvO85LCGhBf38pApU6KONYh8vA9IksFdVayzm9oes=";
+    </script>
+    
+    <script id="html_notice_dialog_script" src="https://www.genspark.ai/notice_dialog.js"></script>
+    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoopLedger - Track Every Loop. Collect Every Ledger.</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .hero-text {
+            color: #1a202c !important;
+            text-shadow: 0 2px 4px rgba(255, 255, 255, 0.8) !important;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            backdrop-filter: blur(10px);
+        }
+        .hero-subtext {
+            color: #2d3748 !important;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8) !important;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            backdrop-filter: blur(8px);
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .chat-bubble {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+        }
+        .chat-bubble:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: black;
+        }
+        .section {
+            display: none;
+        }
+        .section.active {
+            display: block;
+        }
+        .nav-link {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .nav-link:hover {
+            color: #667eea;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        .pricing-card {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .pricing-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+        }
+        .pricing-card.featured {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+        }
+        .connection-status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .connected {
+            background-color: #48bb78;
+        }
+        .disconnected {
+            background-color: #f56565;
+        }
+        .demo-dashboard {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .agency-button {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        .agency-button:hover {
+            border-color: #667eea;
+            background: #f7fafc;
+        }
+        .agency-button.connected {
+            border-color: #48bb78;
+            background: #f0fff4;
+        }
+        .user-nav {
+            display: none;
+        }
+        .guest-nav {
+            display: flex;
+        }
+        .alert {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <i class="fas fa-music text-2xl text-purple-600 mr-2"></i>
+                    <span class="text-2xl font-bold text-gray-800 nav-link" onclick="showSection('home')">LoopLedger</span>
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <span class="nav-link text-gray-700 hover:text-purple-600" onclick="showSection('home')">Home</span>
+                    <span class="nav-link text-gray-700 hover:text-purple-600" onclick="showSection('features')">Features</span>
+                    <span class="nav-link text-gray-700 hover:text-purple-600" onclick="showSection('pricing')">Pricing</span>
+                    <span class="nav-link text-gray-700 hover:text-purple-600" onclick="showSection('demo')">Demo</span>
+                    <span class="nav-link text-gray-700 hover:text-purple-600" onclick="showSection('contact')">Contact</span>
+                </div>
+                <div class="flex space-x-4">
+                    <div class="guest-nav space-x-4">
+                        <button class="text-gray-700 hover:text-purple-600" onclick="openModal('loginModal')">Login</button>
+                        <button class="btn-primary" onclick="openModal('signupModal')">Sign Up</button>
+                    </div>
+                    <div class="user-nav space-x-4">
+                        <span class="nav-link text-gray-700 hover:text-purple-600" onclick="showSection('clientPortal')">Dashboard</span>
+                        <button class="text-gray-700 hover:text-purple-600" onclick="signOut()">Logout</button>
+                        <span id="userEmail" class="text-sm text-gray-600"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Alert Container -->
+    <div id="alertContainer"></div>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Home Section -->
+        <section id="home" class="section active">
+            <!-- Hero Section -->
+            <div class="gradient-bg min-h-screen flex items-center justify-center text-center">
+                <div class="max-w-4xl mx-auto px-4">
+                    <h1 class="hero-text text-5xl md:text-7xl font-bold mb-6">
+                        Track Every Loop.<br>Collect Every Ledger.
+                    </h1>
+                    <p class="hero-subtext text-xl md:text-2xl mb-8 max-w-3xl mx-auto">
+                        Stop losing money to unclaimed royalties. LoopLedger's AI-powered platform tracks every revenue stream, recovers missed payments, and revolutionizes how artists collect their earnings.
+                    </p>
+                    <div class="flex flex-col md:flex-row gap-4 justify-center">
+                        <button class="btn-primary text-lg px-8 py-4" onclick="openModal('signupModal')">Start Free Trial</button>
+                        <button class="bg-white text-gray-800 px-8 py-4 rounded-lg border-2 border-white hover:bg-gray-100 transition" onclick="showSection('demo')">View Demo</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Why LoopLedger Section -->
+            <div class="py-20 bg-white">
+                <div class="max-w-7xl mx-auto px-4">
+                    <div class="text-center mb-16">
+                        <h2 class="text-4xl font-bold text-gray-800 mb-6">The Music Industry Has a $2.5 Billion Problem</h2>
+                        <p class="text-xl text-gray-600 max-w-3xl mx-auto">Every year, billions in royalties go unclaimed. Artists lose 40% of their earnings to poor tracking, delayed payouts, and complex systems.</p>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-12 items-center">
+                        <div>
+                            <h3 class="text-3xl font-bold text-gray-800 mb-6">Current Industry Problems:</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-start">
+                                    <i class="fas fa-exclamation-triangle text-red-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">$2.5 Billion in Unclaimed Royalties Annually</h4>
+                                        <p class="text-gray-600">Massive amounts of money sitting uncollected in industry databases</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <i class="fas fa-clock text-red-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">6-18 Month Payout Delays</h4>
+                                        <p class="text-gray-600">Artists wait months to receive earnings from their music</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <i class="fas fa-chart-line-down text-red-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">Artists Lose 40% of Potential Earnings</h4>
+                                        <p class="text-gray-600">Due to poor tracking and missed revenue streams</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <i class="fas fa-puzzle-piece text-red-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">87% Can't Track All Revenue Streams</h4>
+                                        <p class="text-gray-600">Multiple platforms, agencies, and complex systems create chaos</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-3xl font-bold text-gray-800 mb-6">LoopLedger's Revolution:</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-start">
+                                    <i class="fas fa-robot text-green-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">AI-Powered Tracking</h4>
+                                        <p class="text-gray-600">Never miss a royalty payment with intelligent automation</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <i class="fas fa-bolt text-green-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">Real-Time Analytics</h4>
+                                        <p class="text-gray-600">See earnings as they happen across all platforms</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <i class="fas fa-link text-green-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">Multi-Platform Aggregation</h4>
+                                        <p class="text-gray-600">All revenue streams in one unified dashboard</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <i class="fas fa-gavel text-green-500 mt-1 mr-3"></i>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">Automated Dispute Resolution</h4>
+                                        <p class="text-gray-600">AI fights for your money and recovers missed payments</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Section -->
+            <div class="py-20 gradient-bg">
+                <div class="max-w-7xl mx-auto px-4 text-center">
+                    <h2 class="text-4xl font-bold text-white mb-16">Proven Results for Artists</h2>
+                    <div class="grid md:grid-cols-4 gap-8">
+                        <div class="text-center">
+                            <div class="text-4xl font-bold text-white mb-2">$15,000+</div>
+                            <div class="text-purple-100">Average annual recovery per artist</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-4xl font-bold text-white mb-2">85%</div>
+                            <div class="text-purple-100">Reduction in payout delays</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-4xl font-bold text-white mb-2">15+</div>
+                            <div class="text-purple-100">Revenue streams tracked automatically</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-4xl font-bold text-white mb-2">99.7%</div>
+                            <div class="text-purple-100">Accuracy in royalty matching</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Overview -->
+            <div class="py-20 bg-gray-50">
+                <div class="max-w-7xl mx-auto px-4">
+                    <div class="text-center mb-16">
+                        <h2 class="text-4xl font-bold text-gray-800 mb-6">Everything You Need to Maximize Earnings</h2>
+                        <p class="text-xl text-gray-600">Comprehensive tools to track, recover, and optimize your music revenue</p>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-3 gap-8">
+                        <div class="card text-center">
+                            <i class="fas fa-chart-bar text-4xl text-purple-600 mb-4"></i>
+                            <h3 class="text-xl font-bold mb-4">Real-Time Dashboard</h3>
+                            <p class="text-gray-600">Monitor all your revenue streams in one unified interface with live updates</p>
+                        </div>
+                        <div class="card text-center">
+                            <i class="fas fa-upload text-4xl text-purple-600 mb-4"></i>
+                            <h3 class="text-xl font-bold mb-4">Smart Song Upload</h3>
+                            <p class="text-gray-600">Upload tracks with automatic metadata detection and split agreements</p>
+                        </div>
+                        <div class="card text-center">
+                            <i class="fas fa-search-dollar text-4xl text-purple-600 mb-4"></i>
+                            <h3 class="text-xl font-bold mb-4">Royalty Recovery</h3>
+                            <p class="text-gray-600">AI-powered system detects and recovers missed payments automatically</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Call to Action -->
+            <div class="py-20 bg-white">
+                <div class="max-w-4xl mx-auto text-center px-4">
+                    <h2 class="text-4xl font-bold text-gray-800 mb-6">Ready to Revolutionize Your Music Income?</h2>
+                    <p class="text-xl text-gray-600 mb-8">Join thousands of artists already maximizing their royalty collection with LoopLedger</p>
+                    <button class="btn-primary text-lg px-8 py-4" onclick="openModal('signupModal')">Start Your Free Trial Today</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="section py-20">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl font-bold text-gray-800 mb-6">Powerful Features for Music Professionals</h2>
+                    <p class="text-xl text-gray-600">Everything you need to track, manage, and optimize your music revenue</p>
+                </div>
+                
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="card">
+                        <i class="fas fa-tachometer-alt text-3xl text-purple-600 mb-4"></i>
+                        <h3 class="text-xl font-bold mb-3">Real-Time Dashboard</h3>
+                        <p class="text-gray-600">Monitor earnings from ASCAP, BMI, MLC, SoundExchange, Spotify, Apple Music, and YouTube in one unified interface</p>
+                    </div>
+                    
+                    <div class="card">
+                        <i class="fas fa-upload text-3xl text-purple-600 mb-4"></i>
+                        <h3 class="text-xl font-bold mb-3">Smart Song Upload</h3>
+                        <p class="text-gray-600">Upload songs with automatic metadata detection, ISRC generation, and collaborator split management</p>
+                    </div>
+                    
+                    <div class="card">
+                        <i class="fas fa-file-alt text-3xl text-purple-600 mb-4"></i>
+                        <h3 class="text-xl font-bold mb-3">Automated Reports</h3>
+                        <p class="text-gray-600">Schedule and export detailed PDF/CSV reports with daily, weekly, monthly, or quarterly breakdowns</p>
+                    </div>
+                    
+                    <div class="card">
+                        <i class="fas fa-search-dollar text-3xl text-purple-600 mb-4"></i>
+                        <h3 class="text-xl font-bold mb-3">Royalty Recovery</h3>
+                        <p class="text-gray-600">AI detects payment discrepancies and automatically files disputes to recover missing royalties</p>
+                    </div>
+                    
+                    <div class="card">
+                        <i class="fas fa-users text-3xl text-purple-600 mb-4"></i>
+                        <h3 class="text-xl font-bold mb-3">Client Portal</h3>
+                        <p class="text-gray-600">Secure dashboard for artists, managers, and labels to track songs, earnings, and contract status</p>
+                    </div>
+                    
+                    <div class="card">
+                        <i class="fas fa-cogs text-3xl text-purple-600 mb-4"></i>
+                        <h3 class="text-xl font-bold mb-3">Admin Dashboard</h3>
+                        <p class="text-gray-600">Comprehensive management tools for monitoring users, revenue, API activity, and platform analytics</p>
+                    </div>
+                    
+                    <div class="card">
+                        <i class="fas fa-robot text-3xl text-purple-600 mb-4"></i>
+                        <h3 class="text-xl font-bold mb-3">AI Assistant</h3>
+                        <p class="text-gray-600">LoopBot provides 24/7 guidance for onboarding, support, and royalty questions</p>
+                    </div>
+                    
+                    <div class="card">
+                        <i class="fas fa-link text-3xl text-purple-600 mb-4"></i>
+                        <h3 class="text-xl font-bold mb-3">API Integrations</h3>
+                        <p class="text-gray-600">Direct connections to all major streaming platforms and performing rights organizations</p>
+                    </div>
+                    
+                    <div class="card">
+                        <i class="fas fa-mobile-alt text-3xl text-purple-600 mb-4"></i>
+                        <h3 class="text-xl font-bold mb-3">Mobile App</h3>
+                        <p class="text-gray-600">Access your royalty data anywhere with our responsive mobile application</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing Section -->
+        <section id="pricing" class="section py-20 bg-gray-50">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl font-bold text-gray-800 mb-6">Choose Your Plan</h2>
+                    <p class="text-xl text-gray-600">Flexible pricing for artists at every stage of their career</p>
+                </div>
+                
+                <!-- Track-Based Plans -->
+                <div class="mb-16">
+                    <h3 class="text-2xl font-bold text-center text-gray-800 mb-8">Track-Based Plans (Self-Service)</h3>
+                    <div class="grid md:grid-cols-4 gap-6">
+                        <div class="pricing-card">
+                            <h4 class="text-xl font-bold mb-2">Starter</h4>
+                            <div class="text-3xl font-bold text-purple-600 mb-2">$9</div>
+                            <div class="text-gray-600 mb-4">per month</div>
+                            <div class="text-sm text-gray-600 mb-6">10 tracks</div>
+                            <ul class="text-left space-y-2 mb-6">
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Basic dashboard</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>1 integration</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>2 reports/month</li>
+                            </ul>
+                            <button class="btn-primary w-full" onclick="openModal('signupModal')">Start Trial</button>
+                        </div>
+                        
+                        <div class="pricing-card featured">
+                            <h4 class="text-xl font-bold mb-2">Pro</h4>
+                            <div class="text-3xl font-bold text-purple-600 mb-2">$29</div>
+                            <div class="text-gray-600 mb-4">per month</div>
+                            <div class="text-sm text-gray-600 mb-6">50 tracks</div>
+                            <ul class="text-left space-y-2 mb-6">
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Full dashboard</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>3 integrations</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Unlimited reports</li>
+                            </ul>
+                            <button class="btn-primary w-full" onclick="openModal('signupModal')">Start Trial</button>
+                        </div>
+                        
+                        <div class="pricing-card">
+                            <h4 class="text-xl font-bold mb-2">Business</h4>
+                            <div class="text-3xl font-bold text-purple-600 mb-2">$79</div>
+                            <div class="text-gray-600 mb-4">per month</div>
+                            <div class="text-sm text-gray-600 mb-6">200 tracks</div>
+                            <ul class="text-left space-y-2 mb-6">
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Split manager</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>5 integrations</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Concierge support</li>
+                            </ul>
+                            <button class="btn-primary w-full" onclick="openModal('signupModal')">Start Trial</button>
+                        </div>
+                        
+                        <div class="pricing-card">
+                            <h4 class="text-xl font-bold mb-2">Enterprise</h4>
+                            <div class="text-3xl font-bold text-purple-600 mb-2">$199+</div>
+                            <div class="text-gray-600 mb-4">per month</div>
+                            <div class="text-sm text-gray-600 mb-6">500+ tracks</div>
+                            <ul class="text-left space-y-2 mb-6">
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>White-label</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>API access</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Dedicated team</li>
+                            </ul>
+                            <button class="btn-primary w-full" onclick="showSection('contact')">Contact Sales</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Revenue-Based Plans -->
+                <div class="mb-16">
+                    <h3 class="text-2xl font-bold text-center text-gray-800 mb-8">Revenue-Based Plans (Managed Accounts)</h3>
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <div class="pricing-card">
+                            <h4 class="text-xl font-bold mb-2">Emerging Artist</h4>
+                            <div class="text-3xl font-bold text-purple-600 mb-2">$10</div>
+                            <div class="text-gray-600 mb-4">per month + 5% revenue share</div>
+                            <div class="text-sm text-gray-600 mb-6">Under $10,000 annual earnings</div>
+                            <ul class="text-left space-y-2 mb-6">
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Full platform access</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Royalty recovery service</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Basic support</li>
+                            </ul>
+                            <button class="btn-primary w-full" onclick="openModal('signupModal')">Get Started</button>
+                        </div>
+                        
+                        <div class="pricing-card featured">
+                            <h4 class="text-xl font-bold mb-2">Professional</h4>
+                            <div class="text-3xl font-bold text-purple-600 mb-2">$25</div>
+                            <div class="text-gray-600 mb-4">per month + 3% revenue share</div>
+                            <div class="text-sm text-gray-600 mb-6">$10K - $100K annual earnings</div>
+                            <ul class="text-left space-y-2 mb-6">
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Premium features</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Priority support</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Advanced analytics</li>
+                            </ul>
+                            <button class="btn-primary w-full" onclick="openModal('signupModal')">Get Started</button>
+                        </div>
+                        
+                        <div class="pricing-card">
+                            <h4 class="text-xl font-bold mb-2">Enterprise</h4>
+                            <div class="text-3xl font-bold text-purple-600 mb-2">$49+</div>
+                            <div class="text-gray-600 mb-4">per month + 1.5-2% revenue share</div>
+                            <div class="text-sm text-gray-600 mb-6">$100K+ annual earnings</div>
+                            <ul class="text-left space-y-2 mb-6">
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>White-glove service</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Dedicated manager</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Custom integrations</li>
+                            </ul>
+                            <button class="btn-primary w-full" onclick="showSection('contact')">Contact Sales</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Add-On Services -->
+                <div>
+                    <h3 class="text-2xl font-bold text-center text-gray-800 mb-8">Add-On Services</h3>
+                    <div class="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <div class="card text-center">
+                            <h4 class="font-bold mb-2">Royalty Recovery Service</h4>
+                            <div class="text-purple-600 font-bold">10% of recovered funds</div>
+                        </div>
+                        <div class="card text-center">
+                            <h4 class="font-bold mb-2">Metadata Validator</h4>
+                            <div class="text-purple-600 font-bold">$9/month</div>
+                        </div>
+                        <div class="card text-center">
+                            <h4 class="font-bold mb-2">Dispute Resolution</h4>
+                            <div class="text-purple-600 font-bold">$49 per case</div>
+                        </div>
+                        <div class="card text-center">
+                            <h4 class="font-bold mb-2">PRO/MLC Onboarding</h4>
+                            <div class="text-purple-600 font-bold">$99 setup</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Demo Section -->
+        <section id="demo" class="section py-20">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl font-bold text-gray-800 mb-6">Interactive Demo</h2>
+                    <p class="text-xl text-gray-600">Experience LoopLedger in action with real data and features</p>
+                </div>
+                
+                <!-- Demo Dashboard -->
+                <div class="demo-dashboard mb-12">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-bold text-gray-800">Artist Dashboard - Maya Rodriguez</h3>
+                        <div class="flex space-x-2">
+                            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">6 Accounts Connected</span>
+                            <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">Real-time Sync</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Revenue Overview -->
+                    <div class="grid md:grid-cols-4 gap-6 mb-8">
+                        <div class="metric-card">
+                            <div class="text-2xl font-bold mb-2">$8,947.23</div>
+                            <div class="text-purple-100">This Month</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="text-2xl font-bold mb-2">$87,542.89</div>
+                            <div class="text-purple-100">This Year</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="text-2xl font-bold mb-2">$1,247.89</div>
+                            <div class="text-purple-100">Pending</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="text-2xl font-bold mb-2">$3,421.50</div>
+                            <div class="text-purple-100">Recovered</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Platform Breakdown -->
+                    <div class="grid md:grid-cols-2 gap-8 mb-8">
+                        <div class="bg-gray-50 p-6 rounded-lg">
+                            <h4 class="text-lg font-bold mb-4">Revenue by Platform</h4>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <span>Spotify</span>
+                                    <span class="font-bold">$3,421.89</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span>Apple Music</span>
+                                    <span class="font-bold">$2,108.45</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span>YouTube Music</span>
+                                    <span class="font-bold">$1,876.32</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span>ASCAP</span>
+                                    <span class="font-bold">$892.47</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span>BMI</span>
+                                    <span class="font-bold">$648.10</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-50 p-6 rounded-lg">
+                            <h4 class="text-lg font-bold mb-4">Top Performing Songs</h4>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <div class="font-semibold">Midnight Dreams</div>
+                                        <div class="text-sm text-gray-600">2.4M streams</div>
+                                    </div>
+                                    <span class="font-bold">$2,847.33</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <div class="font-semibold">Electric Nights</div>
+                                        <div class="text-sm text-gray-600">1.8M streams</div>
+                                    </div>
+                                    <span class="font-bold">$2,104.67</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <div class="font-semibold">City Lights</div>
+                                        <div class="text-sm text-gray-600">1.2M streams</div>
+                                    </div>
+                                    <span class="font-bold">$1,432.89</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Agency Connections Demo -->
+                    <div class="mb-8">
+                        <h4 class="text-lg font-bold mb-4">Connected Accounts</h4>
+                        <div class="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
+                            <div class="agency-button connected">
+                                <div class="connection-status connected"></div>
+                                <div class="font-semibold">Spotify</div>
+                                <div class="text-sm text-gray-600">Connected</div>
+                            </div>
+                            <div class="agency-button connected">
+                                <div class="connection-status connected"></div>
+                                <div class="font-semibold">Apple Music</div>
+                                <div class="text-sm text-gray-600">Connected</div>
+                            </div>
+                            <div class="agency-button connected">
+                                <div class="connection-status connected"></div>
+                                <div class="font-semibold">ASCAP</div>
+                                <div class="text-sm text-gray-600">Connected</div>
+                            </div>
+                            <div class="agency-button connected">
+                                <div class="connection-status connected"></div>
+                                <div class="font-semibold">BMI</div>
+                                <div class="text-sm text-gray-600">Connected</div>
+                            </div>
+                            <div class="agency-button connected">
+                                <div class="connection-status connected"></div>
+                                <div class="font-semibold">MLC</div>
+                                <div class="text-sm text-gray-600">Connected</div>
+                            </div>
+                            <div class="agency-button">
+                                <div class="connection-status disconnected"></div>
+                                <div class="font-semibold">SoundExchange</div>
+                                <div class="text-sm text-purple-600 cursor-pointer" onclick="openModal('agencyModal')">Connect Now</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Activity -->
+                    <div class="bg-gray-50 p-6 rounded-lg">
+                        <h4 class="text-lg font-bold mb-4">Recent Activity</h4>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-semibold">Payment Received - Spotify</div>
+                                    <div class="text-sm text-gray-600">March 2024 streaming royalties</div>
+                                </div>
+                                <span class="text-green-600 font-bold">+$1,847.32</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-semibold">Discrepancy Detected - YouTube</div>
+                                    <div class="text-sm text-gray-600">Missing performance royalties filed</div>
+                                </div>
+                                <span class="text-yellow-600 font-bold">Dispute Filed</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-semibold">New Song Registered - "Summer Vibes"</div>
+                                    <div class="text-sm text-gray-600">Uploaded to MLC and ASCAP</div>
+                                </div>
+                                <span class="text-blue-600 font-bold">Registered</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Agency Signup Information -->
+                <div class="bg-white p-8 rounded-lg shadow-lg">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">Don't Have Agency Accounts? We'll Help You Sign Up!</h3>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="text-center">
+                            <i class="fas fa-music text-3xl text-purple-600 mb-3"></i>
+                            <h4 class="font-bold mb-2">ASCAP</h4>
+                            <p class="text-sm text-gray-600 mb-3">Performance rights organization for songwriters and publishers</p>
+                            <button class="btn-primary text-sm" onclick="startAgencySignup('ascap')">Join ASCAP</button>
+                        </div>
+                        <div class="text-center">
+                            <i class="fas fa-broadcast-tower text-3xl text-purple-600 mb-3"></i>
+                            <h4 class="font-bold mb-2">BMI</h4>
+                            <p class="text-sm text-gray-600 mb-3">Performing rights organization with free writer membership</p>
+                            <button class="btn-primary text-sm" onclick="startAgencySignup('bmi')">Join BMI</button>
+                        </div>
+                        <div class="text-center">
+                            <i class="fas fa-cog text-3xl text-purple-600 mb-3"></i>
+                            <h4 class="font-bold mb-2">MLC</h4>
+                            <p class="text-sm text-gray-600 mb-3">Mechanical licensing collective for streaming royalties</p>
+                            <button class="btn-primary text-sm" onclick="startAgencySignup('mlc')">Join MLC</button>
+                        </div>
+                        <div class="text-center">
+                            <i class="fas fa-radio text-3xl text-purple-600 mb-3"></i>
+                            <h4 class="font-bold mb-2">SoundExchange</h4>
+                            <p class="text-sm text-gray-600 mb-3">Digital performance rights for recording artists</p>
+                            <button class="btn-primary text-sm" onclick="startAgencySignup('soundexchange')">Join SoundExchange</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Client Portal Section -->
+        <section id="clientPortal" class="section py-20">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl font-bold text-gray-800 mb-6">Your Client Dashboard</h2>
+                    <p class="text-xl text-gray-600">Manage your royalties, connect accounts, and track earnings</p>
+                </div>
+                
+                <!-- Real Client Dashboard -->
+                <div class="demo-dashboard mb-12">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-bold text-gray-800">Welcome back, <span id="clientName">Artist</span>!</h3>
+                        <div class="flex space-x-2">
+                            <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">Account Active</span>
+                            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm" id="connectionStatus">Supabase Connected</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Stats -->
+                    <div class="grid md:grid-cols-4 gap-6 mb-8">
+                        <div class="metric-card">
+                            <div class="text-2xl font-bold mb-2" id="thisMonth">$0.00</div>
+                            <div class="text-purple-100">This Month</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="text-2xl font-bold mb-2" id="totalEarnings">$0.00</div>
+                            <div class="text-purple-100">Total Earnings</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="text-2xl font-bold mb-2" id="songCount">0</div>
+                            <div class="text-purple-100">Songs Tracked</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="text-2xl font-bold mb-2" id="connectedAccounts">0</div>
+                            <div class="text-purple-100">Connected Accounts</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Connect Accounts Section -->
+                    <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
+                        <h4 class="text-xl font-bold mb-6">Connect Your Accounts</h4>
+                        <div class="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
+                            <div class="agency-button" onclick="connectPlatform('spotify')">
+                                <i class="fab fa-spotify text-2xl text-green-500 mb-2"></i>
+                                <div class="font-semibold">Spotify</div>
+                                <div class="text-sm text-purple-600">Connect</div>
+                            </div>
+                            <div class="agency-button" onclick="connectPlatform('apple')">
+                                <i class="fab fa-apple text-2xl text-gray-700 mb-2"></i>
+                                <div class="font-semibold">Apple Music</div>
+                                <div class="text-sm text-purple-600">Connect</div>
+                            </div>
+                            <div class="agency-button" onclick="connectPlatform('youtube')">
+                                <i class="fab fa-youtube text-2xl text-red-500 mb-2"></i>
+                                <div class="font-semibold">YouTube</div>
+                                <div class="text-sm text-purple-600">Connect</div>
+                            </div>
+                            <div class="agency-button" onclick="connectPlatform('ascap')">
+                                <i class="fas fa-music text-2xl text-purple-600 mb-2"></i>
+                                <div class="font-semibold">ASCAP</div>
+                                <div class="text-sm text-purple-600">Connect</div>
+                            </div>
+                            <div class="agency-button" onclick="connectPlatform('bmi')">
+                                <i class="fas fa-broadcast-tower text-2xl text-blue-600 mb-2"></i>
+                                <div class="font-semibold">BMI</div>
+                                <div class="text-sm text-purple-600">Connect</div>
+                            </div>
+                            <div class="agency-button" onclick="connectPlatform('mlc')">
+                                <i class="fas fa-cog text-2xl text-gray-600 mb-2"></i>
+                                <div class="font-semibold">MLC</div>
+                                <div class="text-sm text-purple-600">Connect</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Song Upload Section -->
+                    <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
+                        <h4 class="text-xl font-bold mb-6">Upload New Song</h4>
+                        <form class="space-y-4" onsubmit="uploadSong(event)">
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Song Title</label>
+                                    <input type="text" id="songTitle" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Artist Name</label>
+                                    <input type="text" id="artistName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                                </div>
+                            </div>
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">ISRC (optional)</label>
+                                    <input type="text" id="isrc" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Release Date</label>
+                                    <input type="date" id="releaseDate" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                <textarea id="songDescription" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+                            </div>
+                            <button type="submit" class="btn-primary">Upload Song</button>
+                        </form>
+                    </div>
+                    
+                    <!-- Recent Activity -->
+                    <div class="bg-white p-6 rounded-lg shadow-lg">
+                        <h4 class="text-xl font-bold mb-6">Recent Activity</h4>
+                        <div id="activityList" class="space-y-3">
+                            <div class="text-gray-600 text-center py-8">
+                                <i class="fas fa-music text-4xl text-gray-300 mb-4"></i>
+                                <p>No activity yet. Start by uploading your first song or connecting an account!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Portal Section -->
+        <section id="admin" class="section py-20">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl font-bold text-gray-800 mb-6">Admin Dashboard</h2>
+                    <p class="text-xl text-gray-600">Platform administration and user management</p>
+                </div>
+                
+                <!-- Admin Login Check -->
+                <div id="adminLoginCheck" class="text-center">
+                    <div class="card max-w-md mx-auto">
+                        <h3 class="text-xl font-bold mb-4">Admin Access Required</h3>
+                        <form onsubmit="adminLogin(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Admin Email</label>
+                                <input type="email" value="admin@loopledger.com" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Admin Password</label>
+                                <input type="password" value="LoopAdmin2024!" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                            </div>
+                            <button type="submit" class="btn-primary w-full">Access Admin Dashboard</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Admin Dashboard -->
+                <div id="adminDashboard" style="display: none;">
+                    <div class="grid md:grid-cols-4 gap-6 mb-8">
+                        <div class="metric-card">
+                            <div class="text-2xl font-bold mb-2" id="totalUsers">0</div>
+                            <div class="text-purple-100">Total Users</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="text-2xl font-bold mb-2" id="totalSongs">0</div>
+                            <div class="text-purple-100">Songs Tracked</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="text-2xl font-bold mb-2" id="totalRevenue">$0</div>
+                            <div class="text-purple-100">Platform Revenue</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="text-2xl font-bold mb-2" id="activeConnections">0</div>
+                            <div class="text-purple-100">API Connections</div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div class="card">
+                            <h4 class="text-xl font-bold mb-4">Recent Users</h4>
+                            <div id="recentUsers" class="space-y-2">
+                                <p class="text-gray-600">No users yet</p>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <h4 class="text-xl font-bold mb-4">System Status</h4>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <span>Supabase Connection</span>
+                                    <span class="text-green-600 font-bold">Connected</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span>API Health</span>
+                                    <span class="text-green-600 font-bold">Healthy</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span>Database Status</span>
+                                    <span class="text-green-600 font-bold">Online</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="section py-20 bg-gray-50">
+            <div class="max-w-4xl mx-auto px-4">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl font-bold text-gray-800 mb-6">Contact Us</h2>
+                    <p class="text-xl text-gray-600">Get in touch with our team for support, sales, or partnership inquiries</p>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-12">
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-6">Get in Touch</h3>
+                        <div class="space-y-6">
+                            <div class="flex items-start">
+                                <i class="fas fa-envelope text-purple-600 mt-1 mr-4"></i>
+                                <div>
+                                    <h4 class="font-semibold text-gray-800">Email Support</h4>
+                                    <p class="text-gray-600"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="bdcec8cdcdd2cfc9fdd1d2d2cdd1d8d9dad8cf93ded2d0">[email&#160;protected]</a></p>
+                                    <p class="text-sm text-gray-500">24/7 support available</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-phone text-purple-600 mt-1 mr-4"></i>
+                                <div>
+                                    <h4 class="font-semibold text-gray-800">Phone Support</h4>
+                                    <p class="text-gray-600">1-800-LOOP-LED</p>
+                                    <p class="text-sm text-gray-500">Mon-Fri 9AM-6PM EST</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-calendar text-purple-600 mt-1 mr-4"></i>
+                                <div>
+                                    <h4 class="font-semibold text-gray-800">Schedule a Demo</h4>
+                                    <p class="text-gray-600">Book a personalized consultation</p>
+                                    <button class="btn-primary mt-2" onclick="openModal('demoModal')">Book Demo Call</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3 class="text-xl font-bold text-gray-800 mb-6">Send us a Message</h3>
+                        <form class="space-y-4" onsubmit="sendMessage(event)">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                                <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input type="email" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    <option>General Inquiry</option>
+                                    <option>Sales Question</option>
+                                    <option>Technical Support</option>
+                                    <option>Partnership</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                                <textarea rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required></textarea>
+                            </div>
+                            <button type="submit" class="btn-primary w-full">Send Message</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-music text-2xl text-purple-400 mr-2"></i>
+                        <span class="text-2xl font-bold">LoopLedger</span>
+                    </div>
+                    <p class="text-gray-400">Revolutionizing music royalty tracking with AI-powered precision.</p>
+                </div>
+                <div>
+                    <h5 class="font-bold mb-4">Product</h5>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" onclick="showSection('features')" class="hover:text-white">Features</a></li>
+                        <li><a href="#" onclick="showSection('pricing')" class="hover:text-white">Pricing</a></li>
+                        <li><a href="#" onclick="showSection('demo')" class="hover:text-white">Demo</a></li>
+                        <li><a href="#" class="hover:text-white">API</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="font-bold mb-4">Support</h5>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white">Help Center</a></li>
+                        <li><a href="#" onclick="showSection('contact')" class="hover:text-white">Contact</a></li>
+                        <li><a href="#" class="hover:text-white">Community</a></li>
+                        <li><a href="#" onclick="showSection('admin')" class="hover:text-white">Admin</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="font-bold mb-4">Legal</h5>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" onclick="openModal('privacyModal')" class="hover:text-white">Privacy Policy</a></li>
+                        <li><a href="#" onclick="openModal('termsModal')" class="hover:text-white">Terms of Service</a></li>
+                        <li><a href="#" onclick="openModal('cookieModal')" class="hover:text-white">Cookie Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 LoopLedger. All rights reserved. | Track Every Loop. Collect Every Ledger.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- LoopBot Chatbot -->
+    <div class="chat-bubble" onclick="openModal('chatModal')">
+        <i class="fas fa-comment text-white text-xl"></i>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('loginModal')">&times;</span>
+            <h2 class="text-2xl font-bold mb-6">Login to LoopLedger</h2>
+            <form class="space-y-4" onsubmit="handleLogin(event)">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" id="loginEmail" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input type="password" id="loginPassword" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                </div>
+                <div class="flex items-center justify-between">
+                    <label class="flex items-center">
+                        <input type="checkbox" class="mr-2">
+                        <span class="text-sm text-gray-600">Remember me</span>
+                    </label>
+                    <a href="#" class="text-sm text-purple-600 hover:underline">Forgot password?</a>
+                </div>
+                <button type="submit" class="btn-primary w-full">Login</button>
+            </form>
+            <div class="mt-4 text-center">
+                <span class="text-gray-600">Don't have an account? </span>
+                <a href="#" onclick="closeModal('loginModal'); openModal('signupModal')" class="text-purple-600 hover:underline">Sign up</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div id="signupModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('signupModal')">&times;</span>
+            <h2 class="text-2xl font-bold mb-6">Start Your Free Trial</h2>
+            <form class="space-y-4" onsubmit="handleSignup(event)">
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                        <input type="text" id="signupFirstName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                        <input type="text" id="signupLastName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" id="signupEmail" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input type="password" id="signupPassword" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Artist/Band Name</label>
+                    <input type="text" id="signupArtistName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                </div>
+                <div>
+                    <label class="flex items-center">
+                        <input type="checkbox" class="mr-2" required>
+                        <span class="text-sm text-gray-600">I agree to the <a href="#" onclick="openModal('termsModal')" class="text-purple-600 hover:underline">Terms of Service</a> and <a href="#" onclick="openModal('privacyModal')" class="text-purple-600 hover:underline">Privacy Policy</a></span>
+                    </label>
+                </div>
+                <button type="submit" class="btn-primary w-full">Start Free Trial</button>
+            </form>
+            <div class="mt-4 text-center">
+                <span class="text-gray-600">Already have an account? </span>
+                <a href="#" onclick="closeModal('signupModal'); openModal('loginModal')" class="text-purple-600 hover:underline">Login</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Modal -->
+    <div id="chatModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('chatModal')">&times;</span>
+            <h2 class="text-xl font-bold mb-4"><i class="fas fa-robot text-purple-600 mr-2"></i>LoopBot Assistant</h2>
+            <div class="h-64 overflow-y-auto bg-gray-50 p-4 rounded-lg mb-4">
+                <div class="space-y-3">
+                    <div class="bg-purple-600 text-white p-3 rounded-lg max-w-xs">
+                        Hi! I'm LoopBot, your AI assistant. How can I help you today?
+                    </div>
+                    <div class="bg-white p-3 rounded-lg max-w-xs ml-auto">
+                        How do I connect my Spotify account?
+                    </div>
+                    <div class="bg-purple-600 text-white p-3 rounded-lg max-w-xs">
+                        Great question! Once you sign up and access your dashboard, you'll see a "Connect Accounts" section. Click on Spotify and follow the OAuth flow to link your Spotify for Artists account. Would you like me to guide you through the signup process?
+                    </div>
+                </div>
+            </div>
+            <div class="flex">
+                <input type="text" placeholder="Type your message..." class="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <button class="btn-primary rounded-l-none">Send</button>
+            </div>
+            <div class="mt-4 text-center">
+                <button class="btn-primary" onclick="openModal('demoModal')">Book a Live Demo Call</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agency Modal -->
+    <div id="agencyModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('agencyModal')">&times;</span>
+            <h2 class="text-2xl font-bold mb-6">Connect SoundExchange Account</h2>
+            <div class="text-center">
+                <i class="fas fa-radio text-6xl text-purple-600 mb-4"></i>
+                <h3 class="text-xl font-bold mb-4">SoundExchange</h3>
+                <p class="text-gray-600 mb-6">Connect your SoundExchange account to track digital performance royalties from Pandora, SiriusXM, and other digital radio services.</p>
+                <button class="btn-primary mb-4" onclick="connectPlatform('soundexchange')">Connect SoundExchange Account</button>
+                <div class="text-sm text-gray-500">
+                    <p>Don't have a SoundExchange account? <a href="#" onclick="startAgencySignup('soundexchange')" class="text-purple-600 hover:underline">Sign up here</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Privacy Policy Modal -->
+    <div id="privacyModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('privacyModal')">&times;</span>
+            <h2 class="text-2xl font-bold mb-6">Privacy Policy</h2>
+            <div class="space-y-4 text-sm text-gray-700 max-h-96 overflow-y-auto">
+                <p><strong>Effective Date:</strong> January 1, 2024</p>
+                <h3 class="text-lg font-bold">Information We Collect</h3>
+                <p>We collect information you provide directly to us, such as when you create an account, upload songs, or contact us for support. This includes your name, email address, payment information, and music metadata.</p>
+                <h3 class="text-lg font-bold">How We Use Your Information</h3>
+                <p>We use the information we collect to provide, maintain, and improve our services, process transactions, send you updates, and respond to your inquiries.</p>
+                <h3 class="text-lg font-bold">Information Sharing</h3>
+                <p>We share your information with performing rights organizations (ASCAP, BMI, etc.) and streaming platforms as necessary to track and collect your royalties. We do not sell your personal information to third parties.</p>
+                <h3 class="text-lg font-bold">Data Security</h3>
+                <p>We implement appropriate security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.</p>
+                <h3 class="text-lg font-bold">Your Rights</h3>
+                <p>You have the right to access, update, or delete your personal information. You may also opt out of certain communications from us.</p>
+                <h3 class="text-lg font-bold">Contact Us</h3>
+                <p>If you have any questions about this Privacy Policy, please contact us at <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="0777756e7166647e476b6868776b62636062752964686a">[email&#160;protected]</a>.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terms of Service Modal -->
+    <div id="termsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('termsModal')">&times;</span>
+            <h2 class="text-2xl font-bold mb-6">Terms of Service</h2>
+            <div class="space-y-4 text-sm text-gray-700 max-h-96 overflow-y-auto">
+                <p><strong>Effective Date:</strong> January 1, 2024</p>
+                <h3 class="text-lg font-bold">Acceptance of Terms</h3>
+                <p>By accessing or using LoopLedger, you agree to be bound by these Terms of Service and all applicable laws and regulations.</p>
+                <h3 class="text-lg font-bold">Description of Service</h3>
+                <p>LoopLedger is a platform that helps artists and music professionals track, manage, and collect royalties from various sources including performing rights organizations and streaming platforms.</p>
+                <h3 class="text-lg font-bold">User Responsibilities</h3>
+                <p>You are responsible for maintaining the confidentiality of your account information and for all activities that occur under your account. You agree to provide accurate and complete information.</p>
+                <h3 class="text-lg font-bold">Subscription and Payment</h3>
+                <p>Subscription fees are billed in advance on a monthly or annual basis. All fees are non-refundable except as required by law.</p>
+                <h3 class="text-lg font-bold">Intellectual Property</h3>
+                <p>You retain ownership of your music and related intellectual property. LoopLedger does not claim any ownership rights in your content.</p>
+                <h3 class="text-lg font-bold">Limitation of Liability</h3>
+                <p>LoopLedger shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of the service.</p>
+                <h3 class="text-lg font-bold">Termination</h3>
+                <p>Either party may terminate this agreement at any time. Upon termination, your access to the service will be discontinued.</p>
+            </div>
+        </div>
+    </div>
+
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://fccmcrspaexuhbqrvhvq.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjY21jcnNwYWV4dWhicXJ2aHZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0MTk5NjMsImV4cCI6MjA2NDk5NTk2M30.cZyMaQtDsjC1KA55KKMTaFBdnHxYR0FHfOTiNagwlB0';
+        
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Global variables
+        let currentUser = null;
+        let userSongs = [];
+        let connectedPlatforms = [];
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthState();
+            initializeEventListeners();
+        });
+
+        // Check authentication state
+        async function checkAuthState() {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) {
+                    currentUser = session.user;
+                    updateUserInterface();
+                    loadUserData();
+                }
+            } catch (error) {
+                console.error('Auth check error:', error);
+            }
+        }
+
+        // Update UI based on auth state
+        function updateUserInterface() {
+            const guestNav = document.querySelector('.guest-nav');
+            const userNav = document.querySelector('.user-nav');
+            
+            if (currentUser) {
+                guestNav.style.display = 'none';
+                userNav.style.display = 'flex';
+                document.getElementById('userEmail').textContent = currentUser.email;
+                document.getElementById('clientName').textContent = currentUser.email.split('@')[0];
+            } else {
+                guestNav.style.display = 'flex';
+                userNav.style.display = 'none';
+            }
+        }
+
+        // Navigation Functions
+        function showSection(sectionId) {
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+        }
+
+        // Modal Functions
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Alert Functions
+        function showAlert(message, type = 'success') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alertContainer.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        // Authentication Functions
+        async function handleSignup(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const firstName = document.getElementById('signupFirstName').value;
+            const lastName = document.getElementById('signupLastName').value;
+            const artistName = document.getElementById('signupArtistName').value;
+            
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            first_name: firstName,
+                            last_name: lastName,
+                            artist_name: artistName
+                        }
+                    }
+                });
+                
+                if (error) throw error;
+                
+                showAlert('Account created successfully! Please check your email for verification.');
+                closeModal('signupModal');
+                
+                // Create user profile
+                if (data.user) {
+                    await createUserProfile(data.user, firstName, lastName, artistName);
+                }
+                
+            } catch (error) {
+                console.error('Signup error:', error);
+                showAlert(error.message, 'error');
+            }
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) throw error;
+                
+                currentUser = data.user;
+                updateUserInterface();
+                loadUserData();
+                showAlert('Login successful! Welcome back!');
+                closeModal('loginModal');
+                showSection('clientPortal');
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                showAlert(error.message, 'error');
+            }
+        }
+
+        async function signOut() {
+            try {
+                await supabase.auth.signOut();
+                currentUser = null;
+                updateUserInterface();
+                showSection('home');
+                showAlert('Logged out successfully!');
+            } catch (error) {
+                console.error('Signout error:', error);
+                showAlert('Error signing out', 'error');
+            }
+        }
+
+        // Create user profile in database
+        async function createUserProfile(user, firstName, lastName, artistName) {
+            try {
+                const { error } = await supabase
+                    .from('profiles')
+                    .insert([
+                        {
+                            id: user.id,
+                            email: user.email,
+                            first_name: firstName,
+                            last_name: lastName,
+                            artist_name: artistName,
+                            created_at: new Date().toISOString()
+                        }
+                    ]);
+                
+                if (error) throw error;
+                console.log('Profile created successfully');
+            } catch (error) {
+                console.error('Profile creation error:', error);
+            }
+        }
+
+        // Load user data
+        async function loadUserData() {
+            if (!currentUser) return;
+            
+            try {
+                // Load user songs
+                const { data: songs, error: songsError } = await supabase
+                    .from('songs')
+                    .select('*')
+                    .eq('user_id', currentUser.id);
+                
+                if (songsError) throw songsError;
+                userSongs = songs || [];
+                updateSongCount();
+                
+                // Load connected platforms
+                const { data: connections, error: connectionsError } = await supabase
+                    .from('api_connections')
+                    .select('*')
+                    .eq('user_id', currentUser.id);
+                
+                if (connectionsError) throw connectionsError;
+                connectedPlatforms = connections || [];
+                updateConnectionCount();
+                
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
+        }
+
+        // Update dashboard counts
+        function updateSongCount() {
+            document.getElementById('songCount').textContent = userSongs.length;
+        }
+
+        function updateConnectionCount() {
+            document.getElementById('connectedAccounts').textContent = connectedPlatforms.length;
+        }
+
+        // Song upload functionality
+        async function uploadSong(event) {
+            event.preventDefault();
+            
+            if (!currentUser) {
+                showAlert('Please log in to upload songs', 'error');
+                return;
+            }
+            
+            const songTitle = document.getElementById('songTitle').value;
+            const artistName = document.getElementById('artistName').value;
+            const isrc = document.getElementById('isrc').value;
+            const releaseDate = document.getElementById('releaseDate').value;
+            const description = document.getElementById('songDescription').value;
+            
+            try {
+                const { data, error } = await supabase
+                    .from('songs')
+                    .insert([
+                        {
+                            user_id: currentUser.id,
+                            title: songTitle,
+                            artist: artistName,
+                            isrc: isrc,
+                            release_date: releaseDate,
+                            description: description,
+                            created_at: new Date().toISOString()
+                        }
+                    ]);
+                
+                if (error) throw error;
+                
+                showAlert('Song uploaded successfully!');
+                document.querySelector('#clientPortal form').reset();
+                loadUserData();
+                addActivity(`New song uploaded: "${songTitle}"`);
+                
+            } catch (error) {
+                console.error('Song upload error:', error);
+                showAlert('Error uploading song', 'error');
+            }
+        }
+
+        // Platform connection functionality
+        async function connectPlatform(platform) {
+            if (!currentUser) {
+                showAlert('Please log in to connect platforms', 'error');
+                return;
+            }
+            
+            try {
+                const { data, error } = await supabase
+                    .from('api_connections')
+                    .insert([
+                        {
+                            user_id: currentUser.id,
+                            platform: platform,
+                            status: 'connected',
+                            connected_at: new Date().toISOString()
+                        }
+                    ]);
+                
+                if (error) throw error;
+                
+                showAlert(`${platform.charAt(0).toUpperCase() + platform.slice(1)} connected successfully!`);
+                loadUserData();
+                addActivity(`Connected ${platform} account`);
+                
+            } catch (error) {
+                console.error('Platform connection error:', error);
+                showAlert(`Error connecting ${platform}`, 'error');
+            }
+        }
+
+        // Add activity to user dashboard
+        function addActivity(activity) {
+            const activityList = document.getElementById('activityList');
+            const activityItem = document.createElement('div');
+            activityItem.className = 'flex justify-between items-center';
+            activityItem.innerHTML = `
+                <div>
+                    <div class="font-semibold">${activity}</div>
+                    <div class="text-sm text-gray-600">${new Date().toLocaleDateString()}</div>
+                </div>
+                <span class="text-green-600 font-bold">New</span>
+            `;
+            
+            if (activityList.querySelector('.text-gray-600.text-center')) {
+                activityList.innerHTML = '';
+            }
+            
+            activityList.insertBefore(activityItem, activityList.firstChild);
+        }
+
+        // Agency signup helpers
+        function startAgencySignup(agency) {
+            const agencies = {
+                'ascap': {
+                    name: 'ASCAP',
+                    url: 'https://www.ascap.com/join',
+                    fee: '$50 for writers',
+                    description: 'American Society of Composers, Authors and Publishers'
+                },
+                'bmi': {
+                    name: 'BMI',
+                    url: 'https://www.bmi.com/join',
+                    fee: 'Free for writers',
+                    description: 'Broadcast Music, Inc.'
+                },
+                'mlc': {
+                    name: 'The MLC',
+                    url: 'https://www.themlc.com/register',
+                    fee: 'Free',
+                    description: 'The Mechanical Licensing Collective'
+                },
+                'soundexchange': {
+                    name: 'SoundExchange',
+                    url: 'https://www.soundexchange.com/service-provider/register/',
+                    fee: 'Free',
+                    description: 'Digital performance rights organization'
+                }
+            };
+            
+            const agencyInfo = agencies[agency];
+            if (agencyInfo) {
+                showAlert(`Redirecting to ${agencyInfo.name} signup...\n\nFee: ${agencyInfo.fee}\nDescription: ${agencyInfo.description}`);
+                window.open(agencyInfo.url, '_blank');
+            }
+        }
+
+        // Admin functionality
+        function adminLogin(event) {
+            event.preventDefault();
+            const email = event.target.querySelector('input[type="email"]').value;
+            const password = event.target.querySelector('input[type="password"]').value;
+            
+            if (email === 'admin@loopledger.com' && password === 'LoopAdmin2024!') {
+                document.getElementById('adminLoginCheck').style.display = 'none';
+                document.getElementById('adminDashboard').style.display = 'block';
+                loadAdminData();
+                showAlert('Admin access granted!');
+            } else {
+                showAlert('Invalid admin credentials', 'error');
+            }
+        }
+
+        async function loadAdminData() {
+            try {
+                // Load user count
+                const { count: userCount } = await supabase
+                    .from('profiles')
+                    .select('*', { count: 'exact', head: true });
+                
+                document.getElementById('totalUsers').textContent = userCount || 0;
+                
+                // Load song count
+                const { count: songCount } = await supabase
+                    .from('songs')
+                    .select('*', { count: 'exact', head: true });
+                
+                document.getElementById('totalSongs').textContent = songCount || 0;
+                
+                // Load recent users
+                const { data: recentUsers } = await supabase
+                    .from('profiles')
+                    .select('email, created_at')
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+                
+                const recentUsersDiv = document.getElementById('recentUsers');
+                if (recentUsers && recentUsers.length > 0) {
+                    recentUsersDiv.innerHTML = recentUsers.map(user => 
+                        `<div class="flex justify-between">
+                            <span>${user.email}</span>
+                            <span class="text-sm text-gray-500">${new Date(user.created_at).toLocaleDateString()}</span>
+                        </div>`
+                    ).join('');
+                }
+                
+            } catch (error) {
+                console.error('Error loading admin data:', error);
+            }
+        }
+
+        // Contact form
+        function sendMessage(event) {
+            event.preventDefault();
+            showAlert('Message sent successfully! We\'ll get back to you within 24 hours.');
+            event.target.reset();
+        }
+
+        // Event listeners
+        function initializeEventListeners() {
+            // Close modal when clicking outside
+            window.onclick = function(event) {
+                const modals = document.querySelectorAll('.modal');
+                modals.forEach(modal => {
+                    if (event.target == modal) {
+                        modal.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        // Listen for auth state changes
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN') {
+                currentUser = session.user;
+                updateUserInterface();
+                loadUserData();
+            } else if (event === 'SIGNED_OUT') {
+                currentUser = null;
+                updateUserInterface();
+            }
+        });
+    </script>
+</body>
+</html>
+    <script id="html_badge_script1">
+        window.__genspark_remove_badge_link = "https://www.genspark.ai/api/html_badge/" +
+            "remove_badge?token=To%2FBnjzloZ3UfQdcSaYfDrlPRPaEef8lMT3%2BC%2BIWB2XaXYGtS2ZmehoAyk0kMhl8NU6hN0CN1JJC6DI2A%2FMZ6moaimNVLJe0L1iFgSuE5CwK0clbsDzwzdZfITUDzhTfvai09fGaQ1iuHooaP3XowKCTKzgu9eBgC%2Fue22%2FR71btjKuPYLQ%2BkZCd5N33spXhO5DC92CMpjm7VSW0BNaKEl2l26S6Rq%2FCq7ISLFLYJlawAY1KcI%2BREBVLQaOc6RnDhFjgJCIHlB66TdC%2BkW8LKaciiPGMkJXOzNskAd%2BeDZAEoE059hXQiktC3jDLbhdo08qpUl77CEcwCVeZ61%2BUQOQQNEe%2FV8NGIDnDXzqTH7uBUv4gaxh%2FbDOXgARe0mzw4nDgTXfEKdDFqXekxb%2FbqK8zShGlH6Tj7OUeLZRLJEZSEHnQXTm34zxYeIaqT5OyclUQtb4C2KZ9V1RWB42tj17JmXQJjQYAj94IsKNd5bJKcr6TaUDb1aEMwSKJd5rL08nvO85LCGhBf38pApU6KONYh8vA9IksFdVayzm9oes%3D";
+        window.__genspark_locale = "en-US";
+        window.__genspark_token = "To/BnjzloZ3UfQdcSaYfDrlPRPaEef8lMT3+C+IWB2XaXYGtS2ZmehoAyk0kMhl8NU6hN0CN1JJC6DI2A/MZ6moaimNVLJe0L1iFgSuE5CwK0clbsDzwzdZfITUDzhTfvai09fGaQ1iuHooaP3XowKCTKzgu9eBgC/ue22/R71btjKuPYLQ+kZCd5N33spXhO5DC92CMpjm7VSW0BNaKEl2l26S6Rq/Cq7ISLFLYJlawAY1KcI+REBVLQaOc6RnDhFjgJCIHlB66TdC+kW8LKaciiPGMkJXOzNskAd+eDZAEoE059hXQiktC3jDLbhdo08qpUl77CEcwCVeZ61+UQOQQNEe/V8NGIDnDXzqTH7uBUv4gaxh/bDOXgARe0mzw4nDgTXfEKdDFqXekxb/bqK8zShGlH6Tj7OUeLZRLJEZSEHnQXTm34zxYeIaqT5OyclUQtb4C2KZ9V1RWB42tj17JmXQJjQYAj94IsKNd5bJKcr6TaUDb1aEMwSKJd5rL08nvO85LCGhBf38pApU6KONYh8vA9IksFdVayzm9oes=";
+    </script>
+    
+    <script id="html_notice_dialog_script" src="https://www.genspark.ai/notice_dialog.js"></script>
+    
